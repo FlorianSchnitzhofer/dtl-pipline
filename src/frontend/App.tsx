@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DTLibList } from './components/DTLibList';
 import { DTLibDetail } from './components/DTLibDetail';
 import { DTLWorkflow } from './components/DTLWorkflow';
+import { dtlibAPI, dtlAPI, DTLibAPI, DTLAPI } from './services/api';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export type DTLib = {
   id: string;
@@ -48,132 +50,238 @@ type View =
   | { type: 'dtlib-detail'; dtlibId: string }
   | { type: 'dtl-workflow'; dtlibId: string; dtlId: string };
 
+// Helper functions to convert between API and UI types
+function apiToUILib(api: DTLibAPI): DTLib {
+  return {
+    id: api.id,
+    name: api.law_name,
+    lawIdentifier: api.law_identifier,
+    jurisdiction: api.jurisdiction,
+    version: api.version,
+    status: api.status,
+    effectiveDate: api.effective_date || '',
+    lawText: api.full_text || '',
+    authoritativeUrl: api.authoritative_source_url || '',
+    description: api.description || ''
+  };
+}
+
+function uiToAPILib(ui: Partial<DTLib>): Partial<DTLibAPI> {
+  const api: Partial<DTLibAPI> = {};
+  if (ui.name !== undefined) api.law_name = ui.name;
+  if (ui.lawIdentifier !== undefined) api.law_identifier = ui.lawIdentifier;
+  if (ui.jurisdiction !== undefined) api.jurisdiction = ui.jurisdiction;
+  if (ui.version !== undefined) api.version = ui.version;
+  if (ui.status !== undefined) api.status = ui.status;
+  if (ui.effectiveDate !== undefined) api.effective_date = ui.effectiveDate;
+  if (ui.lawText !== undefined) api.full_text = ui.lawText;
+  if (ui.authoritativeUrl !== undefined) api.authoritative_source_url = ui.authoritativeUrl;
+  if (ui.description !== undefined) api.description = ui.description;
+  return api;
+}
+
+function apiToUIDTL(api: DTLAPI): DTL {
+  return {
+    id: api.id,
+    dtlibId: api.dtlib_id,
+    name: api.title,
+    description: api.description || '',
+    owner: api.owner || 'Unassigned',
+    version: api.version,
+    legalText: api.legal_text,
+    legalReference: api.legal_reference,
+    authoritativeUrl: api.source_url || '',
+    category: api.classification || '',
+    tags: api.tags || [],
+    reviewStatus: api.status || 'pending',
+    reviewComments: ''
+  };
+}
+
+function uiToAPIDTL(ui: Partial<DTL>): Partial<DTLAPI> {
+  const api: Partial<DTLAPI> = {};
+  if (ui.name !== undefined) api.title = ui.name;
+  if (ui.description !== undefined) api.description = ui.description;
+  if (ui.owner !== undefined) api.owner = ui.owner;
+  if (ui.legalText !== undefined) api.legal_text = ui.legalText;
+  if (ui.legalReference !== undefined) api.legal_reference = ui.legalReference;
+  if (ui.authoritativeUrl !== undefined) api.source_url = ui.authoritativeUrl;
+  if (ui.category !== undefined) api.classification = ui.category;
+  if (ui.tags !== undefined) api.tags = ui.tags;
+  if (ui.reviewStatus !== undefined) api.status = ui.reviewStatus;
+  return api;
+}
+
 export default function App() {
   const [view, setView] = useState<View>({ type: 'list' });
-  const [dtlibs, setDtlibs] = useState<DTLib[]>([
-    {
-      id: '1',
-      name: 'Family Benefits Act 2024',
-      lawIdentifier: 'FBA-2024-01',
-      jurisdiction: 'Federal',
-      version: '1.0',
-      status: 'in-progress',
-      effectiveDate: '2024-01-01',
-      lawText: 'FAMILY BENEFITS ACT 2024\n\nSection 1: Definitions\n1.1 In this Act, "eligible family" means a family unit that meets the criteria specified in Section 2.\n1.2 "Dependent child" means a child under the age of 18 years or under 25 years if enrolled in full-time education.\n\nSection 2: Eligibility Criteria\n2.1 A family is eligible for benefits under this Act if:\n(a) the family includes at least one dependent child;\n(b) the combined household income does not exceed $75,000 per annum;\n(c) at least one parent or guardian is a citizen or permanent resident.\n\nSection 3: Benefit Calculation\n3.1 The monthly benefit amount shall be calculated as follows:\n(a) Base amount: $500 per family;\n(b) Additional amount per child: $200;\n(c) Low-income supplement: $150 if household income is below $40,000.\n\nSection 4: Application Process\n4.1 Applications must be submitted within 60 days of the qualifying event.\n4.2 Supporting documentation must include proof of income, citizenship status, and dependent children.',
-      authoritativeUrl: 'https://legislation.gov/fba-2024-01',
-      description: 'Federal legislation governing family benefit eligibility and calculation'
-    },
-    {
-      id: '2',
-      name: 'Tax Relief Act 2023',
-      lawIdentifier: 'TRA-2023-15',
-      jurisdiction: 'Federal',
-      version: '2.1',
-      status: 'approved',
-      effectiveDate: '2023-07-01',
-      lawText: 'TAX RELIEF ACT 2023\n\nSection 1: Income Tax Deductions\n1.1 Taxpayers may claim deductions for charitable contributions up to 30% of adjusted gross income...',
-      authoritativeUrl: 'https://legislation.gov/tra-2023-15',
-      description: 'Tax relief provisions for individuals and corporations'
-    }
-  ]);
+  const [dtlibs, setDtlibs] = useState<DTLib[]>([]);
+  const [dtls, setDtls] = useState<DTL[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [dtls, setDtls] = useState<DTL[]>([
-    {
-      id: 'dtl-1',
-      dtlibId: '1',
-      name: 'Family Eligibility Rule',
-      description: 'Determines whether a family unit qualifies for benefits under the Family Benefits Act',
-      owner: 'Sarah Chen',
-      version: '1.0',
-      legalText: 'Section 2: Eligibility Criteria\n2.1 A family is eligible for benefits under this Act if:\n(a) the family includes at least one dependent child;\n(b) the combined household income does not exceed $75,000 per annum;\n(c) at least one parent or guardian is a citizen or permanent resident.',
-      legalReference: 'Section 2, Subsection 2.1, Paragraphs (a)-(c)',
-      authoritativeUrl: 'https://legislation.gov/fba-2024-01#section-2',
-      category: 'Eligibility',
-      tags: ['eligibility', 'family', 'income-test'],
-      ontologyOwl: '<?xml version="1.0"?>\n<rdf:RDF xmlns="http://www.legislation.gov/ontology/fba#"\n     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"\n     xmlns:owl="http://www.w3.org/2002/07/owl#"\n     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">\n    \n    <owl:Class rdf:about="#Family">\n        <rdfs:label>Family</rdfs:label>\n        <rdfs:comment>A family unit applying for benefits</rdfs:comment>\n    </owl:Class>\n    \n    <owl:Class rdf:about="#DependentChild">\n        <rdfs:label>Dependent Child</rdfs:label>\n        <rdfs:comment>A child under 18 or under 25 if in education</rdfs:comment>\n    </owl:Class>\n    \n    <owl:DatatypeProperty rdf:about="#householdIncome">\n        <rdfs:domain rdf:resource="#Family"/>\n        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>\n    </owl:DatatypeProperty>\n    \n    <owl:DatatypeProperty rdf:about="#hasCitizenship">\n        <rdfs:domain rdf:resource="#Family"/>\n        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>\n    </owl:DatatypeProperty>\n    \n</rdf:RDF>',
-      configurationOwl: '<?xml version="1.0"?>\n<rdf:RDF xmlns="http://www.legislation.gov/config/fba#"\n     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">\n    \n    <Configuration rdf:about="#EligibilityConfig">\n        <maxHouseholdIncome rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">75000</maxHouseholdIncome>\n        <minDependentChildren rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</minDependentChildren>\n        <childAgeLimit rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">18</childAgeLimit>\n        <educationChildAgeLimit rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">25</educationChildAgeLimit>\n    </Configuration>\n    \n</rdf:RDF>',
-      apiSpec: '{\n  "openapi": "3.0.0",\n  "info": {\n    "title": "Family Eligibility API",\n    "version": "1.0.0"\n  },\n  "paths": {\n    "/check-eligibility": {\n      "post": {\n        "summary": "Check family eligibility",\n        "requestBody": {\n          "content": {\n            "application/json": {\n              "schema": {\n                "$ref": "#/components/schemas/EligibilityRequest"\n              }\n            }\n          }\n        },\n        "responses": {\n          "200": {\n            "description": "Eligibility result",\n            "content": {\n              "application/json": {\n                "schema": {\n                  "$ref": "#/components/schemas/EligibilityResponse"\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  },\n  "components": {\n    "schemas": {\n      "EligibilityRequest": {\n        "type": "object",\n        "required": ["householdIncome", "dependentChildren", "hasCitizenship"],\n        "properties": {\n          "householdIncome": { "type": "number" },\n          "dependentChildren": { "type": "integer" },\n          "hasCitizenship": { "type": "boolean" }\n        }\n      },\n      "EligibilityResponse": {\n        "type": "object",\n        "properties": {\n          "eligible": { "type": "boolean" },\n          "reason": { "type": "string" },\n          "legalReference": { "type": "string" }\n        }\n      }\n    }\n  }\n}',
-      mcpSpec: '{\n  "name": "family-eligibility",\n  "description": "Determines family benefit eligibility",\n  "inputSchema": {\n    "type": "object",\n    "properties": {\n      "householdIncome": { "type": "number", "description": "Annual household income" },\n      "dependentChildren": { "type": "number", "description": "Number of dependent children" },\n      "hasCitizenship": { "type": "boolean", "description": "At least one parent is citizen/resident" }\n    },\n    "required": ["householdIncome", "dependentChildren", "hasCitizenship"]\n  }\n}',
-      tests: [
-        { id: 't1', name: 'Eligible family - standard case', description: 'Income $50k, 2 children, citizen', status: 'passed' },
-        { id: 't2', name: 'Ineligible - income too high', description: 'Income $80k, 1 child, citizen', status: 'passed' },
-        { id: 't3', name: 'Ineligible - no children', description: 'Income $40k, 0 children, citizen', status: 'passed' },
-        { id: 't4', name: 'Ineligible - no citizenship', description: 'Income $50k, 2 children, no citizenship', status: 'passed' },
-        { id: 't5', name: 'Boundary case - exactly $75k income', description: 'Income $75k, 1 child, citizen', status: 'passed' }
-      ],
-      logic: 'function checkEligibility(input) {\n  const { householdIncome, dependentChildren, hasCitizenship } = input;\n  \n  // Check dependent children requirement (Section 2.1(a))\n  if (dependentChildren < 1) {\n    return {\n      eligible: false,\n      reason: "Family must include at least one dependent child",\n      legalReference: "Section 2.1(a)"\n    };\n  }\n  \n  // Check income threshold (Section 2.1(b))\n  if (householdIncome > 75000) {\n    return {\n      eligible: false,\n      reason: "Combined household income exceeds $75,000",\n      legalReference: "Section 2.1(b)"\n    };\n  }\n  \n  // Check citizenship requirement (Section 2.1(c))\n  if (!hasCitizenship) {\n    return {\n      eligible: false,\n      reason: "At least one parent/guardian must be citizen or permanent resident",\n      legalReference: "Section 2.1(c)"\n    };\n  }\n  \n  return {\n    eligible: true,\n    reason: "Family meets all eligibility criteria",\n    legalReference: "Section 2.1"\n  };\n}',
-      reviewStatus: 'approved',
-      reviewComments: ''
-    },
-    {
-      id: 'dtl-2',
-      dtlibId: '1',
-      name: 'Benefit Amount Calculation',
-      description: 'Calculates the monthly benefit amount based on family composition and income',
-      owner: 'Michael Rodriguez',
-      version: '1.0',
-      legalText: 'Section 3: Benefit Calculation\n3.1 The monthly benefit amount shall be calculated as follows:\n(a) Base amount: $500 per family;\n(b) Additional amount per child: $200;\n(c) Low-income supplement: $150 if household income is below $40,000.',
-      legalReference: 'Section 3, Subsection 3.1, Paragraphs (a)-(c)',
-      authoritativeUrl: 'https://legislation.gov/fba-2024-01#section-3',
-      category: 'Calculation',
-      tags: ['benefit', 'calculation', 'payment'],
-      reviewStatus: 'pending',
-      reviewComments: ''
-    },
-    {
-      id: 'dtl-3',
-      dtlibId: '1',
-      name: 'Application Deadline Rule',
-      description: 'Determines whether an application is submitted within the required timeframe',
-      owner: 'Sarah Chen',
-      version: '1.0',
-      legalText: 'Section 4: Application Process\n4.1 Applications must be submitted within 60 days of the qualifying event.',
-      legalReference: 'Section 4, Subsection 4.1',
-      authoritativeUrl: 'https://legislation.gov/fba-2024-01#section-4',
-      category: 'Process',
-      tags: ['application', 'deadline', 'timeframe'],
-      reviewStatus: 'revision-requested',
-      reviewComments: 'Need clarification on how "qualifying event" is defined across different scenarios'
+  // Load DTLIBs on mount
+  useEffect(() => {
+    loadDTLibs();
+  }, []);
+
+  // Load DTLs when viewing a DTLIB
+  useEffect(() => {
+    if (view.type !== 'list') {
+      loadDTLs(view.dtlibId);
     }
-  ]);
+  }, [view]);
+
+  const loadDTLibs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const apiLibs = await dtlibAPI.list();
+      setDtlibs(apiLibs.map(apiToUILib));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load DTLIBs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadDTLs = async (dtlibId: string) => {
+    try {
+      const apiDtls = await dtlAPI.list(dtlibId);
+      setDtls(apiDtls.map(apiToUIDTL));
+    } catch (err) {
+      console.error('Failed to load DTLs:', err);
+    }
+  };
 
   const handleNavigate = (newView: View) => {
     setView(newView);
   };
 
-  const handleUpdateDTLib = (id: string, updates: Partial<DTLib>) => {
-    setDtlibs(prev => prev.map(lib => lib.id === id ? { ...lib, ...updates } : lib));
-  };
-
-  const handleCreateDTLib = (newLib: Omit<DTLib, 'id'>) => {
-    const id = `dtlib-${Date.now()}`;
-    setDtlibs(prev => [...prev, { ...newLib, id }]);
-  };
-
-  const handleDeleteDTLib = (id: string) => {
-    setDtlibs(prev => prev.filter(lib => lib.id !== id));
-    setDtls(prev => prev.filter(dtl => dtl.dtlibId !== id));
-    if (view.type !== 'list') {
-      setView({ type: 'list' });
+  const handleUpdateDTLib = async (id: string, updates: Partial<DTLib>) => {
+    try {
+      const apiUpdates = uiToAPILib(updates);
+      const updated = await dtlibAPI.update(id, apiUpdates);
+      setDtlibs(prev => prev.map(lib => lib.id === id ? apiToUILib(updated) : lib));
+    } catch (err) {
+      alert('Failed to update DTLIB: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };
 
-  const handleCreateDTL = (dtlibId: string, newDtl: Omit<DTL, 'id' | 'dtlibId'>) => {
-    const id = `dtl-${Date.now()}`;
-    setDtls(prev => [...prev, { ...newDtl, id, dtlibId }]);
+  const handleCreateDTLib = async (newLib: Omit<DTLib, 'id'>) => {
+    try {
+      const apiData = {
+        law_name: newLib.name,
+        law_identifier: newLib.lawIdentifier,
+        jurisdiction: newLib.jurisdiction,
+        version: newLib.version,
+        effective_date: newLib.effectiveDate,
+        authoritative_source_url: newLib.authoritativeUrl,
+        full_text: newLib.lawText,
+        description: newLib.description,
+        status: newLib.status
+      };
+      const created = await dtlibAPI.create(apiData);
+      setDtlibs(prev => [...prev, apiToUILib(created)]);
+    } catch (err) {
+      alert('Failed to create DTLIB: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
   };
 
-  const handleUpdateDTL = (id: string, updates: Partial<DTL>) => {
-    setDtls(prev => prev.map(dtl => dtl.id === id ? { ...dtl, ...updates } : dtl));
+  const handleDeleteDTLib = async (id: string) => {
+    try {
+      await dtlibAPI.delete(id);
+      setDtlibs(prev => prev.filter(lib => lib.id !== id));
+      setDtls(prev => prev.filter(dtl => dtl.dtlibId !== id));
+      if (view.type !== 'list') {
+        setView({ type: 'list' });
+      }
+    } catch (err) {
+      alert('Failed to delete DTLIB: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
   };
 
-  const handleDeleteDTL = (id: string) => {
-    setDtls(prev => prev.filter(dtl => dtl.id !== id));
+  const handleCreateDTL = async (dtlibId: string, newDtl: Omit<DTL, 'id' | 'dtlibId'>) => {
+    try {
+      const apiData = {
+        title: newDtl.name,
+        legal_text: newDtl.legalText,
+        legal_reference: newDtl.legalReference,
+        description: newDtl.description,
+        owner: newDtl.owner,
+        classification: newDtl.category,
+        tags: newDtl.tags
+      };
+      const created = await dtlAPI.create(dtlibId, apiData);
+      setDtls(prev => [...prev, apiToUIDTL(created)]);
+    } catch (err) {
+      alert('Failed to create DTL: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  };
+
+  const handleUpdateDTL = async (id: string, updates: Partial<DTL>) => {
+    const dtl = dtls.find(d => d.id === id);
+    if (!dtl) return;
+
+    try {
+      const apiUpdates = uiToAPIDTL(updates);
+      const updated = await dtlAPI.update(dtl.dtlibId, id, apiUpdates);
+      
+      // Update local state
+      setDtls(prev => prev.map(d => {
+        if (d.id === id) {
+          return { ...d, ...updates };
+        }
+        return d;
+      }));
+    } catch (err) {
+      alert('Failed to update DTL: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  };
+
+  const handleDeleteDTL = async (id: string) => {
+    const dtl = dtls.find(d => d.id === id);
+    if (!dtl) return;
+
+    try {
+      await dtlAPI.delete(dtl.dtlibId, id);
+      setDtls(prev => prev.filter(d => d.id !== id));
+    } catch (err) {
+      alert('Failed to delete DTL: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
   };
 
   const currentDTLib = view.type !== 'list' ? dtlibs.find(lib => lib.id === view.dtlibId) : undefined;
   const currentDTLs = view.type !== 'list' ? dtls.filter(dtl => dtl.dtlibId === view.dtlibId) : [];
   const currentDTL = view.type === 'dtl-workflow' ? dtls.find(dtl => dtl.id === view.dtlId) : undefined;
+
+  if (loading && view.type === 'list') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="size-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Loading Digital Twin Libraries...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && view.type === 'list') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="size-12 text-red-600 mx-auto mb-4" />
+          <h2 className="text-slate-900 mb-2">Error Loading Data</h2>
+          <p className="text-slate-600 mb-6">{error}</p>
+          <button
+            onClick={loadDTLibs}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

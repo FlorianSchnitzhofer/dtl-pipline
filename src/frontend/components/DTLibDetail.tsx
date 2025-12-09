@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, FileText, Sparkles, Plus, Trash2, Edit2, CheckCircle2, Clock, AlertCircle, BookOpen, ExternalLink } from 'lucide-react';
 import type { DTLib, DTL } from '../App';
+import { dtlibAPI } from '../services/api';
 
 type Tab = 'metadata' | 'lawtext' | 'dtls';
 
@@ -480,6 +481,7 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
   onCreateDTL: (dtl: Omit<DTL, 'id' | 'dtlibId'>) => void;
 }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Array<{
     name: string;
     description: string;
@@ -488,28 +490,24 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
     category: string;
   }>>([]);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     setIsAnalyzing(true);
-    // Simulate AI analysis
-    setTimeout(() => {
-      setSuggestions([
-        {
-          name: 'Dependent Child Definition',
-          description: 'Defines what constitutes a dependent child for benefit purposes',
-          legalText: '1.2 "Dependent child" means a child under the age of 18 years or under 25 years if enrolled in full-time education.',
-          legalReference: 'Section 1, Subsection 1.2',
-          category: 'Definition'
-        },
-        {
-          name: 'Application Deadline Validation',
-          description: 'Validates that applications are submitted within the required 60-day timeframe',
-          legalText: '4.1 Applications must be submitted within 60 days of the qualifying event.',
-          legalReference: 'Section 4, Subsection 4.1',
-          category: 'Process'
-        }
-      ]);
+    setError(null);
+    
+    try {
+      const apiSuggestions = await dtlibAPI.segment(dtlib.id);
+      setSuggestions(apiSuggestions.map(s => ({
+        name: s.title,
+        description: s.description,
+        legalText: s.legal_text,
+        legalReference: s.legal_reference,
+        category: 'Process' // Default category, can be enhanced
+      })));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze statute');
+    } finally {
       setIsAnalyzing(false);
-    }, 2000);
+    }
   };
 
   const handleAccept = (suggestion: typeof suggestions[0]) => {
@@ -536,6 +534,13 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
         </div>
 
         <div className="p-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex gap-3">
+              <AlertCircle className="size-5 text-red-600 flex-shrink-0" />
+              <p className="text-sm text-red-900">{error}</p>
+            </div>
+          )}
+          
           {suggestions.length === 0 ? (
             <div className="text-center py-12">
               <Sparkles className="size-12 text-blue-600 mx-auto mb-4" />
