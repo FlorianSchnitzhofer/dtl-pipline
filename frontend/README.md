@@ -38,11 +38,25 @@ docker run \
   dtl-frontend
 ```
 
-If you need to point the build at a specific backend API, supply the `VITE_API_BASE_URL` build argument:
+If you need to point the application at a specific backend API, you can either:
+
+1. Set the `VITE_API_BASE_URL` build argument so the frontend makes direct calls to the backend:
 
 ```bash
 docker build -t dtl-frontend \
   --build-arg VITE_API_BASE_URL="https://your-backend.example.com/api" \
   ./frontend
 ```
+
+2. Configure the runtime Nginx reverse proxy using environment variables when running the container (useful in platforms like Azure App Service where the backend is reachable via a DNS name instead of the Docker Compose service name):
+
+```bash
+docker run \
+  -e BACKEND_BASE_URL="https://your-backend.example.com/api" \
+  -e NGINX_RESOLVER="1.1.1.1 8.8.8.8" \
+  -p 8080:80 \
+  dtl-frontend
+```
+
+`BACKEND_BASE_URL` defaults to `http://backend:8000` and `NGINX_RESOLVER` defaults to `127.0.0.11`, keeping local Docker Compose behaviour unchanged while enabling hosted deployments to resolve the backend correctly.
 
