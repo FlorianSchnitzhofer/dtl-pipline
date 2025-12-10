@@ -29,3 +29,4 @@ docker build -t dtl-frontend \
   --build-arg VITE_API_BASE_URL="https://your-backend.example.com/api" \
   ./frontend
 ```
+
