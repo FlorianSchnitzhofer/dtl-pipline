@@ -13,6 +13,7 @@ type Props = {
 
 export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
   const [currentStage, setCurrentStage] = useState<Stage>(0);
+  const ownerLabel = dtl.ownerUserId ? `User #${dtl.ownerUserId}` : 'Unassigned';
 
   const stages = [
     { id: 0 as Stage, name: 'Metadata', icon: FileText, color: 'blue' },
@@ -61,14 +62,14 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
           </div>
         </div>
 
-        <div className="p-6 border-b border-slate-200 bg-slate-50">
-          <p className="text-sm text-slate-500 mb-2">Current DTL</p>
-          <h3 className="text-slate-900 mb-3">{dtl.name}</h3>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="text-slate-500">Owner:</span>
-              <p className="text-slate-900">{dtl.owner}</p>
-            </div>
+          <div className="p-6 border-b border-slate-200 bg-slate-50">
+            <p className="text-sm text-slate-500 mb-2">Current DTL</p>
+            <h3 className="text-slate-900 mb-3">{dtl.name}</h3>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-slate-500">Owner:</span>
+                <p className="text-slate-900">{ownerLabel}</p>
+              </div>
             <div>
               <span className="text-slate-500">Category:</span>
               <p className="text-slate-900">{dtl.category}</p>
@@ -178,7 +179,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
   const [formData, setFormData] = useState({
     name: dtl.name,
     description: dtl.description,
-    owner: dtl.owner,
+    ownerUserId: dtl.ownerUserId ? String(dtl.ownerUserId) : '',
     category: dtl.category,
     tags: dtl.tags.join(', ')
   });
@@ -187,7 +188,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
     onUpdate(dtl.id, {
       name: formData.name,
       description: formData.description,
-      owner: formData.owner,
+      ownerUserId: formData.ownerUserId ? Number(formData.ownerUserId) : null,
       category: formData.category,
       tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean)
     });
@@ -236,15 +237,15 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-slate-700 mb-2">Owner / Responsible Person</label>
-                <input
-                  type="text"
-                  value={formData.owner}
-                  onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            <div>
+              <label className="block text-slate-700 mb-2">Owner / Responsible Person</label>
+              <input
+                type="number"
+                value={formData.ownerUserId}
+                onChange={(e) => setFormData({ ...formData, ownerUserId: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
               <div>
                 <label className="block text-slate-700 mb-2">Category</label>
@@ -280,7 +281,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
                   setFormData({
                     name: dtl.name,
                     description: dtl.description,
-                    owner: dtl.owner,
+                    ownerUserId: dtl.ownerUserId ? String(dtl.ownerUserId) : '',
                     category: dtl.category,
                     tags: dtl.tags.join(', ')
                   });
@@ -310,7 +311,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
             <div className="grid md:grid-cols-3 gap-6">
               <div>
                 <span className="text-slate-500 text-sm">Owner</span>
-                <p className="text-slate-900 mt-1">{dtl.owner}</p>
+                <p className="text-slate-900 mt-1">{dtl.ownerUserId ? `User #${dtl.ownerUserId}` : 'Unassigned'}</p>
               </div>
               <div>
                 <span className="text-slate-500 text-sm">Category</span>

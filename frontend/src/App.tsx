@@ -23,7 +23,7 @@ export type DTL = {
   dtlibId: string;
   name: string;
   description: string;
-  owner: string;
+  ownerUserId?: number | null;
   version: string;
   legalText: string;
   legalReference: string;
@@ -86,7 +86,7 @@ function apiToUIDTL(api: DTLAPI): DTL {
     dtlibId: api.dtlib_id,
     name: api.title,
     description: api.description || '',
-    owner: api.owner || 'Unassigned',
+    ownerUserId: api.owner_user_id,
     version: api.version,
     legalText: api.legal_text,
     legalReference: api.legal_reference,
@@ -102,12 +102,13 @@ function uiToAPIDTL(ui: Partial<DTL>): Partial<DTLAPI> {
   const api: Partial<DTLAPI> = {};
   if (ui.name !== undefined) api.title = ui.name;
   if (ui.description !== undefined) api.description = ui.description;
-  if (ui.owner !== undefined) api.owner = ui.owner;
+  if (ui.ownerUserId !== undefined) api.owner_user_id = ui.ownerUserId;
   if (ui.legalText !== undefined) api.legal_text = ui.legalText;
   if (ui.legalReference !== undefined) api.legal_reference = ui.legalReference;
   if (ui.authoritativeUrl !== undefined) api.source_url = ui.authoritativeUrl;
   if (ui.category !== undefined) api.classification = ui.category;
   if (ui.tags !== undefined) api.tags = ui.tags;
+  if (ui.version !== undefined) api.version = ui.version;
   if (ui.reviewStatus !== undefined) api.status = ui.reviewStatus;
   return api;
 }
@@ -178,7 +179,8 @@ export default function App() {
         authoritative_source_url: newLib.authoritativeUrl,
         full_text: newLib.lawText,
         description: newLib.description,
-        status: newLib.status
+        status: newLib.status,
+        created_by: 1
       };
       const created = await dtlibAPI.create(apiData);
       setDtlibs(prev => [...prev, apiToUILib(created)]);
@@ -207,9 +209,10 @@ export default function App() {
         legal_text: newDtl.legalText,
         legal_reference: newDtl.legalReference,
         description: newDtl.description,
-        owner: newDtl.owner,
+        owner_user_id: newDtl.ownerUserId,
         classification: newDtl.category,
-        tags: newDtl.tags
+        tags: newDtl.tags,
+        version: newDtl.version
       };
       const created = await dtlAPI.create(dtlibId, apiData);
       setDtls(prev => [...prev, apiToUIDTL(created)]);
@@ -228,10 +231,7 @@ export default function App() {
       
       // Update local state
       setDtls(prev => prev.map(d => {
-        if (d.id === id) {
-          return { ...d, ...updates };
-        }
-        return d;
+        return d.id === id ? { ...d, ...updates } : d;
       }));
     } catch (err) {
       alert('Failed to update DTL: ' + (err instanceof Error ? err.message : 'Unknown error'));

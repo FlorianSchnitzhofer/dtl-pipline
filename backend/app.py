@@ -1,13 +1,41 @@
 from __future__ import annotations
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from .database import Base, engine
+from .database import Base, SessionLocal, engine
+from .models import User
 from .routers import dtlibs, dtls, users
 
 Base.metadata.create_all(bind=engine)
 
+
+def ensure_default_user() -> None:
+    db = SessionLocal()
+    try:
+        if not db.query(User).first():
+            system_user = User(
+                external_id="system",
+                display_name="System",
+                email="system@example.com",
+            )
+            db.add(system_user)
+            db.commit()
+    finally:
+        db.close()
+
+
+ensure_default_user()
+
 app = FastAPI(title="Digital Twin Legislation API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(users.router, prefix="/api")
 app.include_router(dtlibs.router, prefix="/api")
