@@ -4,26 +4,30 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DEFAULT_DB_HOST = os.getenv("SQL_DB_HOST", "k2gn.your-database.de")
-DEFAULT_DB_USER = os.getenv("SQL_DB_USER", "admin_user")
-DEFAULT_DB_NAME = os.getenv("SQL_DB_NAME", "db_dtal_pipeline")
-DEFAULT_DB_PASSWORD = os.getenv("SQL_DB_PASSWORD")
+DEFAULT_DB_HOST = os.getenv("SQL_DB_HOST", "db")
+DEFAULT_DB_USER = os.getenv("SQL_DB_USER", "dtl")
+DEFAULT_DB_NAME = os.getenv("SQL_DB_NAME", "dtl")
+DEFAULT_DB_PASSWORD = os.getenv("SQL_DB_PASSWORD", "dtl")
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    (
-        f"mysql+pymysql://{DEFAULT_DB_USER}:{DEFAULT_DB_PASSWORD}"
-        f"@{DEFAULT_DB_HOST}/{DEFAULT_DB_NAME}"
-    )
-    if DEFAULT_DB_PASSWORD
-    else None,
-)
 
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL not configured. Set DATABASE_URL or provide SQL_DB_PASSWORD "
-        "(and optionally SQL_DB_USER, SQL_DB_HOST, SQL_DB_NAME) for the default MySQL URL."
+def build_database_url() -> str:
+    explicit_url = os.getenv("DATABASE_URL")
+    if explicit_url:
+        return explicit_url
+
+    credentials = {
+        "user": DEFAULT_DB_USER,
+        "password": DEFAULT_DB_PASSWORD,
+        "host": DEFAULT_DB_HOST,
+        "database": DEFAULT_DB_NAME,
+    }
+    return (
+        f"mysql+pymysql://{credentials['user']}:{credentials['password']}"
+        f"@{credentials['host']}/{credentials['database']}"
     )
+
+
+DATABASE_URL = build_database_url()
 
 engine = create_engine(
     DATABASE_URL,

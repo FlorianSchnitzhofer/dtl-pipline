@@ -9,6 +9,11 @@
 
   Run `npm run dev` to start the development server.
 
+  A docker-compose stack is included for local integration testing. The backend now
+  defaults to the bundled MariaDB service (`db`) with credentials `dtl`/`dtl`, and the
+  frontend container proxies `/api` requests directly to the backend, so the UI and API
+  work together without additional configuration.
+
   ## Database configuration
 
   The backend is configured to connect to the external MySQL instance at `k2gn.your-database.de` with the database `db_dtal_pipeline` and user `admin_user`.
