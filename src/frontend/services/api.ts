@@ -1,7 +1,8 @@
 // API Service for Digital Twins of Legislation
 // Handles all REST API communication with authentication
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'https://api.dtl.example.com/api';
+const API_BASE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || '/api';
 
 // Types matching the API specification
 export type DTLibStatus = 'draft' | 'in-progress' | 'review' | 'approved';

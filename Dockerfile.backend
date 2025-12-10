@@ -3,8 +3,9 @@ WORKDIR /app
 COPY src/backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY src/backend ./
-ENV SQL_DB_HOST=k2gn.your-database.de
-ENV SQL_DB_USER=admin_user
-ENV SQL_DB_NAME=db_dtal_pipeline
+ENV SQL_DB_HOST=db
+ENV SQL_DB_USER=dtl
+ENV SQL_DB_NAME=dtl
+ENV SQL_DB_PASSWORD=dtl
 ENV PYTHONPATH=/app
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
