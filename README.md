@@ -7,13 +7,19 @@
 
   Run `npm i` to install the dependencies.
 
-  Run `npm run dev` to start the development server.
+Run `npm run dev` to start the development server.
 
-  Run `npm start` to build the frontend bundle and serve it from `server.js`. Requests to
-  `/api`, `/docs`, and `/openapi.json` are proxied to the backend URL set by the
-  `API_PROXY_TARGET` environment variable (defaults to `http://localhost:8000`), so the
-  REST API, Swagger UI, and OpenAPI schema are reachable from the same public host as the
-  static site.
+Run `npm start` to build the frontend bundle and serve it from `server.js`. Requests to
+`/api`, `/docs`, and `/openapi.json` are proxied to the backend URL set by the
+`API_PROXY_TARGET` environment variable (defaults to `http://localhost:8000`), so the
+REST API, Swagger UI, and OpenAPI schema are reachable from the same public host as the
+static site.
+
+When the backend is deployed behind a TLS-terminating proxy (for example, on Azure App
+Service), set `AZURE_SITE_HOSTNAME` or `API_PUBLIC_BASE_URL` so the generated OpenAPI
+schema uses the external HTTPS URL. You can override the default path prefix with
+`API_PREFIX` and restrict CORS origins with `API_CORS_ALLOW_ORIGINS` (comma-separated
+hostnames or `*` for all).
 
   A docker-compose stack is included for local integration testing. The backend now
   defaults to the bundled MariaDB service (`db`) with credentials `dtl`/`dtl`, and the
