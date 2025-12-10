@@ -20,3 +20,7 @@
 
   Provide the password via the `SQL_DB_PASSWORD` environment variable (or a full override via `DATABASE_URL`). Optional overrides for host, user, and database name are available through `SQL_DB_HOST`, `SQL_DB_USER`, and `SQL_DB_NAME`.
   
+## Local development
+- Backend API: `PYTHONPATH=src uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000`
+- Frontend UI: `npm run dev -- --host 0.0.0.0 --port 5173`
+- Container stack: `docker-compose up --build --remove-orphans`

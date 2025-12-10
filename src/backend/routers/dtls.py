@@ -1,0 +1,410 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from .. import models, schemas
+from ..database import get_db
+from ..dependencies import get_dtlib_or_404, resolve_dtlib, resolve_dtl
+from ..llm import llm_service
+
+router = APIRouter(prefix="/dtlibs/{dtlib_id}/dtls", tags=["dtls"])
+
+
+def _serialize_test(test: models.DTLTest) -> schemas.TestCaseRead:
+    return schemas.TestCaseRead(
+        id=test.id,
+        dtl_id=test.dtl_id,
+        name=test.name,
+        input=test.input_json,
+        expected_output=test.expected_output_json,
+        description=test.description,
+        last_run_at=test.last_run_at,
+        last_result=test.last_result,
+    )
+
+
+def _serialize_comment(comment: models.DTLComment) -> schemas.CommentRead:
+    return schemas.CommentRead(
+        id=comment.id,
+        dtl_id=comment.dtl_id,
+        author_id=comment.author_id,
+        role=comment.role,
+        comment=comment.comment,
+        comment_type=comment.comment_type,
+        created_at=comment.created_at,
+    )
+
+
+@router.get("", response_model=List[schemas.DTLRead])
+def list_dtls(
+    dtlib_id: int,
+    db: Session = Depends(get_db),
+    search: str | None = None,
+):
+    get_dtlib_or_404(db, dtlib_id)
+    query = db.query(models.DTL).filter_by(dtlib_id=dtlib_id)
+    if search:
+        like = f"%{search}%"
+        query = query.filter(models.DTL.title.ilike(like))
+    return query.order_by(models.DTL.position).all()
+
+
+@router.post("", response_model=schemas.DTLRead, status_code=status.HTTP_201_CREATED)
+def create_dtl(
+    payload: schemas.DTLCreate,
+    db: Session = Depends(get_db),
+    dtlib: models.DTLIB = Depends(resolve_dtlib),
+):
+    dtl = models.DTL(dtlib_id=dtlib.id, **payload.dict())
+    db.add(dtl)
+    db.commit()
+    db.refresh(dtl)
+    return dtl
+
+
+@router.get("/{dtl_id}", response_model=schemas.DTLRead)
+def get_dtl(dtl: models.DTL = Depends(resolve_dtl)):
+    return dtl
+
+
+@router.put("/{dtl_id}", response_model=schemas.DTLRead)
+def update_dtl(
+    payload: schemas.DTLUpdate,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    for field, value in payload.dict(exclude_unset=True).items():
+        setattr(dtl, field, value)
+    db.add(dtl)
+    db.commit()
+    db.refresh(dtl)
+    return dtl
+
+
+@router.delete("/{dtl_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_dtl(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
+    db.delete(dtl)
+    db.commit()
+    return None
+
+
+@router.get("/{dtl_id}/ontology", response_model=schemas.OntologyPayload | None)
+def get_ontology(dtl: models.DTL = Depends(resolve_dtl)):
+    if not dtl.ontology:
+        return None
+    return schemas.OntologyPayload(ontology_owl=dtl.ontology.ontology_owl)
+
+
+@router.put("/{dtl_id}/ontology", response_model=schemas.OntologyPayload)
+def save_ontology(
+    payload: schemas.OntologyPayload,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    if dtl.ontology:
+        dtl.ontology.ontology_owl = payload.ontology_owl
+    else:
+        dtl.ontology = models.DTLOntology(ontology_owl=payload.ontology_owl)
+    db.add(dtl)
+    db.commit()
+    return payload
+
+
+@router.post("/{dtl_id}/ontology/generate", response_model=schemas.OntologyPayload)
+def generate_ontology(dtl: models.DTL = Depends(resolve_dtl)):
+    prompt = f"Create OWL ontology for the following legal text: {dtl.legal_text[:2000]}"
+    content = llm_service.generate_text(prompt)
+    return schemas.OntologyPayload(ontology_owl=content)
+
+
+@router.get("/{dtl_id}/interface", response_model=schemas.InterfacePayload | None)
+def get_interface(dtl: models.DTL = Depends(resolve_dtl)):
+    if not dtl.interface:
+        return None
+    data = dtl.interface.interface_json
+    return schemas.InterfacePayload(
+        function_name=data.get("function_name", dtl.title),
+        inputs=data.get("inputs", []),
+        outputs=data.get("outputs", []),
+        mcp_spec=dtl.interface.mcp_spec,
+    )
+
+
+@router.put("/{dtl_id}/interface", response_model=schemas.InterfacePayload)
+def save_interface(
+    payload: schemas.InterfacePayload,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    if dtl.interface:
+        dtl.interface.interface_json = payload.dict(exclude={"mcp_spec"})
+        dtl.interface.mcp_spec = payload.mcp_spec
+    else:
+        dtl.interface = models.DTLInterface(
+            interface_json=payload.dict(exclude={"mcp_spec"}),
+            mcp_spec=payload.mcp_spec,
+        )
+    db.add(dtl)
+    db.commit()
+    return payload
+
+
+@router.post("/{dtl_id}/interface/generate", response_model=schemas.InterfacePayload)
+def generate_interface(dtl: models.DTL = Depends(resolve_dtl)):
+    prompt = f"Propose input/output schema for function: {dtl.title}. Context: {dtl.legal_text[:1000]}"
+    content = llm_service.generate_text(prompt)
+    return schemas.InterfacePayload(
+        function_name=dtl.title,
+        inputs=[{"name": "input", "description": content[:120]}],
+        outputs=[{"name": "result", "description": content[:120]}],
+    )
+
+
+@router.get("/{dtl_id}/configuration", response_model=schemas.ConfigurationPayload | None)
+def get_configuration(dtl: models.DTL = Depends(resolve_dtl)):
+    if not dtl.configuration:
+        return None
+    return schemas.ConfigurationPayload(configuration_owl=dtl.configuration.configuration_owl)
+
+
+@router.put("/{dtl_id}/configuration", response_model=schemas.ConfigurationPayload)
+def save_configuration(
+    payload: schemas.ConfigurationPayload,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    if dtl.configuration:
+        dtl.configuration.configuration_owl = payload.configuration_owl
+    else:
+        dtl.configuration = models.DTLConfiguration(configuration_owl=payload.configuration_owl)
+    db.add(dtl)
+    db.commit()
+    return payload
+
+
+@router.post("/{dtl_id}/configuration/generate", response_model=schemas.ConfigurationPayload)
+def generate_configuration(dtl: models.DTL = Depends(resolve_dtl)):
+    prompt = f"Extract configuration parameters (rates, thresholds) as OWL from: {dtl.legal_text[:1500]}"
+    content = llm_service.generate_text(prompt)
+    return schemas.ConfigurationPayload(configuration_owl=content)
+
+
+@router.get("/{dtl_id}/tests", response_model=List[schemas.TestCaseRead])
+def list_tests(dtl: models.DTL = Depends(resolve_dtl)):
+    return [_serialize_test(test) for test in dtl.tests]
+
+
+@router.post("/{dtl_id}/tests", response_model=schemas.TestCaseRead, status_code=status.HTTP_201_CREATED)
+def create_test(
+    payload: schemas.TestCaseCreate,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    test = models.DTLTest(
+        dtl_id=dtl.id,
+        name=payload.name,
+        input_json=payload.input,
+        expected_output_json=payload.expected_output,
+        description=payload.description,
+    )
+    db.add(test)
+    db.commit()
+    db.refresh(test)
+    return _serialize_test(test)
+
+
+@router.get("/{dtl_id}/tests/{test_id}", response_model=schemas.TestCaseRead)
+def get_test(
+    test_id: int,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    test = db.get(models.DTLTest, test_id)
+    if not test or test.dtl_id != dtl.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test not found")
+    return _serialize_test(test)
+
+
+@router.put("/{dtl_id}/tests/{test_id}", response_model=schemas.TestCaseRead)
+def update_test(
+    test_id: int,
+    payload: schemas.TestCaseUpdate,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    test = db.get(models.DTLTest, test_id)
+    if not test or test.dtl_id != dtl.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test not found")
+    for field, value in payload.dict(exclude_unset=True).items():
+        if field == "input":
+            test.input_json = value
+        elif field == "expected_output":
+            test.expected_output_json = value
+        else:
+            setattr(test, field, value)
+    db.add(test)
+    db.commit()
+    db.refresh(test)
+    return _serialize_test(test)
+
+
+@router.delete("/{dtl_id}/tests/{test_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_test(
+    test_id: int,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    test = db.get(models.DTLTest, test_id)
+    if not test or test.dtl_id != dtl.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test not found")
+    db.delete(test)
+    db.commit()
+    return None
+
+
+@router.post("/{dtl_id}/tests/run")
+def run_tests(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
+    tests = db.query(models.DTLTest).filter_by(dtl_id=dtl.id).all()
+    results = []
+    for test in tests:
+        test.last_run_at = datetime.utcnow()
+        test.last_result = "Not Run"
+        db.add(test)
+        results.append({"test_id": test.id, "result": test.last_result})
+    db.commit()
+    return {"results": results}
+
+
+@router.post("/{dtl_id}/tests/generate", response_model=List[schemas.TestCaseRead])
+def generate_tests(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
+    prompt = f"Generate 2 JSON test cases for DTL: {dtl.title}."
+    content = llm_service.generate_text(prompt)
+    test = models.DTLTest(
+        dtl_id=dtl.id,
+        name="LLM Proposed Test",
+        input_json={"prompt": content[:30]},
+        expected_output_json={"expected": content[:30]},
+        description=content[:120],
+    )
+    db.add(test)
+    db.commit()
+    db.refresh(test)
+    return [_serialize_test(test)]
+
+
+@router.get("/{dtl_id}/logic", response_model=schemas.LogicPayload | None)
+def get_logic(dtl: models.DTL = Depends(resolve_dtl)):
+    if not dtl.logic:
+        return None
+    return schemas.LogicPayload(language=dtl.logic.language, code=dtl.logic.code)
+
+
+@router.put("/{dtl_id}/logic", response_model=schemas.LogicPayload)
+def save_logic(
+    payload: schemas.LogicPayload,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    if dtl.logic:
+        dtl.logic.language = payload.language
+        dtl.logic.code = payload.code
+    else:
+        dtl.logic = models.DTLLogic(language=payload.language, code=payload.code)
+    db.add(dtl)
+    db.commit()
+    return payload
+
+
+@router.post("/{dtl_id}/logic/generate", response_model=schemas.LogicPayload)
+def generate_logic(dtl: models.DTL = Depends(resolve_dtl)):
+    prompt = f"Draft executable pseudo-code for: {dtl.title}. Context: {dtl.legal_text[:1000]}"
+    code = llm_service.generate_text(prompt)
+    return schemas.LogicPayload(language="Python", code=code)
+
+
+@router.get("/{dtl_id}/review", response_model=schemas.ReviewRead)
+def review_summary(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
+    if not dtl.review:
+        dtl.review = models.DTLReview(status="Pending")
+        db.add(dtl)
+        db.commit()
+        db.refresh(dtl)
+    return schemas.ReviewRead(
+        status=dtl.review.status,
+        approved_version=dtl.review.approved_version,
+        approved_at=dtl.review.approved_at,
+        last_comment=dtl.review.last_comment,
+    )
+
+
+@router.post("/{dtl_id}/approve", response_model=schemas.ReviewRead)
+def approve_dtl(
+    payload: schemas.ReviewPayload | None = None,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    if not dtl.review:
+        dtl.review = models.DTLReview()
+    dtl.review.status = "Approved"
+    dtl.review.approved_at = datetime.utcnow()
+    dtl.review.approved_version = payload.approved_version if payload else dtl.version
+    dtl.review.last_comment = payload.comment if payload else None
+    db.add(dtl)
+    db.commit()
+    return schemas.ReviewRead(
+        status=dtl.review.status,
+        approved_version=dtl.review.approved_version,
+        approved_at=dtl.review.approved_at,
+        last_comment=dtl.review.last_comment,
+    )
+
+
+@router.post("/{dtl_id}/request-revision", response_model=schemas.ReviewRead)
+def request_revision(
+    payload: schemas.ReviewPayload | None = None,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    if not dtl.review:
+        dtl.review = models.DTLReview()
+    dtl.review.status = "Revision Requested"
+    dtl.review.last_comment = payload.comment if payload else None
+    db.add(dtl)
+    db.commit()
+    return schemas.ReviewRead(
+        status=dtl.review.status,
+        approved_version=dtl.review.approved_version,
+        approved_at=dtl.review.approved_at,
+        last_comment=dtl.review.last_comment,
+    )
+
+
+@router.get("/{dtl_id}/comments", response_model=List[schemas.CommentRead])
+def list_comments(dtl: models.DTL = Depends(resolve_dtl)):
+    comments = sorted(dtl.comments, key=lambda c: c.created_at)
+    return [_serialize_comment(comment) for comment in comments]
+
+
+@router.post("/{dtl_id}/comments", response_model=schemas.CommentRead, status_code=status.HTTP_201_CREATED)
+def add_comment(
+    payload: schemas.CommentCreate,
+    db: Session = Depends(get_db),
+    dtl: models.DTL = Depends(resolve_dtl),
+):
+    if not db.get(models.User, payload.author_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="author not found")
+    comment = models.DTLComment(
+        dtl_id=dtl.id,
+        author_id=payload.author_id,
+        role=payload.role,
+        comment=payload.comment,
+        comment_type=payload.comment_type,
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return _serialize_comment(comment)

@@ -1,12 +1,7 @@
-from __future__ import annotations
-
 import os
 from typing import Optional
 
-try:
-    from openai import AzureOpenAI
-except Exception:  # pragma: no cover - optional dependency
-    AzureOpenAI = None  # type: ignore
+from openai import AzureOpenAI
 
 
 class LLMService:
@@ -15,16 +10,18 @@ class LLMService:
         self.api_key = os.getenv("AZURE_OPENAI_API_KEY")
         self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
         self.client: Optional[AzureOpenAI] = None
-        if self.endpoint and self.api_key and AzureOpenAI:
-            self.client = AzureOpenAI(
-                azure_endpoint=self.endpoint,
-                api_key=self.api_key,
-                api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
-            )
+        if self.endpoint and self.api_key:
+            try:
+                self.client = AzureOpenAI(
+                    azure_endpoint=self.endpoint,
+                    api_key=self.api_key,
+                    api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
+                )
+            except Exception:
+                self.client = None
 
     def generate_text(self, prompt: str) -> str:
         if not self.client or not self.deployment:
-            # fall back to a deterministic stub to keep the API usable without secrets
             return f"[stubbed LLM response for prompt: {prompt[:120]}...]"
         completion = self.client.chat.completions.create(
             model=self.deployment,
