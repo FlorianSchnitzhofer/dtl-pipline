@@ -1,0 +1,33 @@
+version: '3.9'
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: example
+      MARIADB_DATABASE: dtl
+      MARIADB_USER: dtl
+      MARIADB_PASSWORD: dtl
+    ports:
+      - "3306:3306"
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      SQL_DB_PASSWORD: ${SQL_DB_PASSWORD:-dtl}
+      SQL_DB_HOST: ${SQL_DB_HOST:-db}
+      SQL_DB_USER: ${SQL_DB_USER:-dtl}
+      SQL_DB_NAME: ${SQL_DB_NAME:-dtl}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
