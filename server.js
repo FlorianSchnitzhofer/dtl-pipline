@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const distDir = path.join(__dirname, 'build');
+const distDir = path.join(__dirname, 'dist');
 const port = parseInt(process.env.PORT || '4173', 10);
 
 if (!fs.existsSync(distDir)) {
