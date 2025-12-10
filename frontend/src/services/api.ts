@@ -6,6 +6,51 @@ const API_BASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
   '/api';
 
+const mapStatusToUI = (status: string | undefined, fallback: string) => {
+  const normalized = (status || fallback).toLowerCase().replace(/\s+/g, '-');
+  return normalized;
+};
+
+export const normalizeDTLibStatus = (status?: string): DTLibStatus => {
+  const normalized = mapStatusToUI(status, 'draft');
+  const allowed: DTLibStatus[] = ['draft', 'in-progress', 'review', 'approved'];
+  return allowed.includes(normalized as DTLibStatus) ? normalized as DTLibStatus : 'draft';
+};
+
+export const normalizeDTLStatus = (status?: string): DTLReviewStatus => {
+  const normalized = mapStatusToUI(status, 'pending');
+  const allowed: DTLReviewStatus[] = ['pending', 'approved', 'revision-requested'];
+  return allowed.includes(normalized as DTLReviewStatus)
+    ? (normalized as DTLReviewStatus)
+    : 'pending';
+};
+
+const mapDTLibStatusToAPI = (status: string | undefined) => {
+  switch (status) {
+    case 'in-progress':
+      return 'In Progress';
+    case 'review':
+      return 'Review';
+    case 'approved':
+      return 'Approved';
+    case 'draft':
+    default:
+      return 'Draft';
+  }
+};
+
+const mapDTLStatusToAPI = (status: string | undefined) => {
+  switch (status) {
+    case 'approved':
+      return 'Approved';
+    case 'revision-requested':
+      return 'Revision Requested';
+    case 'pending':
+    default:
+      return 'Draft';
+  }
+};
+
 // Types matching the API specification
 export type DTLibStatus = 'draft' | 'in-progress' | 'review' | 'approved';
 export type DTLReviewStatus = 'pending' | 'approved' | 'revision-requested';
@@ -16,7 +61,7 @@ export interface DTLibAPI {
   law_identifier: string;
   jurisdiction: string;
   version: string;
-  status: DTLibStatus;
+  status: string;
   effective_date?: string;
   authoritative_source_url?: string;
   full_text?: string;
@@ -39,7 +84,7 @@ export interface DTLAPI {
   source_url?: string;
   classification?: string;
   tags?: string[];
-  status?: DTLReviewStatus;
+  status?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -177,7 +222,10 @@ export const dtlibAPI = {
   }): Promise<DTLibAPI> => {
     return fetchAPI<DTLibAPI>('/dtlibs', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        status: mapDTLibStatusToAPI(data.status),
+      }),
     });
   },
 
@@ -190,7 +238,10 @@ export const dtlibAPI = {
   update: async (dtlibId: string, data: Partial<DTLibAPI>): Promise<DTLibAPI> => {
     return fetchAPI<DTLibAPI>(`/dtlibs/${dtlibId}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        status: mapDTLibStatusToAPI(data.status),
+      }),
     });
   },
 
@@ -252,10 +303,14 @@ export const dtlAPI = {
     classification?: string;
     tags?: string[];
     version: string;
+    status?: DTLReviewStatus;
   }): Promise<DTLAPI> => {
     return fetchAPI<DTLAPI>(`/dtlibs/${dtlibId}/dtls`, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        status: mapDTLStatusToAPI(data.status),
+      }),
     });
   },
 
@@ -272,7 +327,10 @@ export const dtlAPI = {
   ): Promise<DTLAPI> => {
     return fetchAPI<DTLAPI>(`/dtlibs/${dtlibId}/dtls/${dtlId}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        status: mapDTLStatusToAPI(data.status),
+      }),
     });
   },
 
