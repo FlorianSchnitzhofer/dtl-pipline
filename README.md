@@ -14,6 +14,9 @@
   frontend container proxies `/api` requests directly to the backend, so the UI and API
   work together without additional configuration.
 
+  The Vite development server also proxies `/api` to `http://localhost:8000` by default.
+  Override the target with `VITE_API_PROXY_TARGET` if your backend runs elsewhere.
+
   ## Database configuration
 
   The backend is configured to connect to the external MySQL instance at `k2gn.your-database.de` with the database `db_dtal_pipeline` and user `admin_user`.
@@ -22,5 +25,5 @@
   
 ## Local development
 - Backend API: `PYTHONPATH=src uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000`
-- Frontend UI: `npm run dev -- --host 0.0.0.0 --port 5173`
+- Frontend UI: `npm run dev -- --host 0.0.0.0 --port 3000`
 - Container stack: `docker-compose up --build --remove-orphans`
