@@ -58,5 +58,5 @@ docker run \
   dtl-frontend
 ```
 
-`BACKEND_BASE_URL` defaults to `http://backend:8000` and `NGINX_RESOLVER` defaults to `127.0.0.11`, keeping local Docker Compose behaviour unchanged while enabling hosted deployments to resolve the backend correctly.
+`BACKEND_BASE_URL` defaults to `http://backend:8000`. If you do not provide `NGINX_RESOLVER`, the container will automatically use the nameservers from `/etc/resolv.conf` (falling back to `127.0.0.11`), keeping local Docker Compose behaviour unchanged while enabling hosted deployments to resolve the backend correctly.
 
