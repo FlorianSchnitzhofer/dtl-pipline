@@ -27,6 +27,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+    environment:
+      BACKEND_HOST: ${BACKEND_HOST:-backend}
+      BACKEND_PORT: ${BACKEND_PORT:-8000}
     ports:
       - "80:80"
     depends_on:
