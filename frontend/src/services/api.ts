@@ -1,10 +1,10 @@
 // API Service for Digital Twins of Legislation
 // Handles all REST API communication with authentication
 
-// Default to local backend when no explicit API base is configured
+// Default to same-origin API when no explicit base is configured
 const API_BASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
-  'http://localhost:8000/api';
+  '/api';
 
 // Types matching the API specification
 export type DTLibStatus = 'draft' | 'in-progress' | 'review' | 'approved';
