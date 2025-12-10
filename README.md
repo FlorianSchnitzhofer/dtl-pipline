@@ -14,6 +14,18 @@
   frontend container proxies `/api` requests directly to the backend, so the UI and API
   work together without additional configuration.
 
+## Containerisierung des Frontends
+
+Der bereitgestellte `Dockerfile.frontend` baut ein produktionsfähiges Vite-Bundle und
+serviert es über Nginx. Das Backend-Ziel lässt sich zur Laufzeit über die Umgebungs-
+variablen `BACKEND_HOST` (Standard: `backend`) und `BACKEND_PORT` (Standard: `8000`)
+setzen. Ein Beispiel zum lokalen Testen:
+
+```bash
+docker compose build frontend
+docker compose up frontend
+```
+
   ## Database configuration
 
   The backend is configured to connect to the external MySQL instance at `k2gn.your-database.de` with the database `db_dtal_pipeline` and user `admin_user`.
