@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-: "${BACKEND_BASE_URL:=http://dtlpipe-epcbdpbhatcdcqgk.germanywestcentral-01.azurewebsites.net:8000}"
+: "${BACKEND_BASE_URL:=http://backend:8000}"
 
 # Derive a sensible resolver if one was not provided. This keeps the Docker
 # Compose default (Docker DNS at 127.0.0.11) while allowing platforms like

@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 import { DTLibList } from './components/DTLibList';
 import { DTLibDetail } from './components/DTLibDetail';
 import { DTLWorkflow } from './components/DTLWorkflow';
-import { dtlibAPI, dtlAPI, DTLibAPI, DTLAPI } from './services/api';
+import {
+  dtlibAPI,
+  dtlAPI,
+  DTLibAPI,
+  DTLAPI,
+  normalizeDTLibStatus,
+  normalizeDTLStatus,
+} from './services/api';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export type DTLib = {
@@ -58,7 +65,7 @@ function apiToUILib(api: DTLibAPI): DTLib {
     lawIdentifier: api.law_identifier,
     jurisdiction: api.jurisdiction,
     version: api.version,
-    status: api.status,
+    status: normalizeDTLibStatus(api.status),
     effectiveDate: api.effective_date || '',
     lawText: api.full_text || '',
     authoritativeUrl: api.authoritative_source_url || '',
@@ -93,7 +100,7 @@ function apiToUIDTL(api: DTLAPI): DTL {
     authoritativeUrl: api.source_url || '',
     category: api.classification || '',
     tags: api.tags || [],
-    reviewStatus: api.status || 'pending',
+    reviewStatus: normalizeDTLStatus(api.status),
     reviewComments: ''
   };
 }
@@ -212,7 +219,8 @@ export default function App() {
         owner_user_id: newDtl.ownerUserId,
         classification: newDtl.category,
         tags: newDtl.tags,
-        version: newDtl.version
+        version: newDtl.version,
+        status: newDtl.reviewStatus,
       };
       const created = await dtlAPI.create(dtlibId, apiData);
       setDtls(prev => [...prev, apiToUIDTL(created)]);
@@ -228,10 +236,9 @@ export default function App() {
     try {
       const apiUpdates = uiToAPIDTL(updates);
       const updated = await dtlAPI.update(dtl.dtlibId, id, apiUpdates);
-      
-      // Update local state
+
       setDtls(prev => prev.map(d => {
-        return d.id === id ? { ...d, ...updates } : d;
+        return d.id === id ? apiToUIDTL(updated) : d;
       }));
     } catch (err) {
       alert('Failed to update DTL: ' + (err instanceof Error ? err.message : 'Unknown error'));
