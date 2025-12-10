@@ -418,7 +418,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                         </div>
                         <p className="text-slate-600 text-sm mb-3">{dtl.description}</p>
                         <div className="flex items-center gap-4 text-sm text-slate-500">
-                          <span>Owner: {dtl.owner}</span>
+                          <span>Owner: {dtl.ownerUserId ? `User #${dtl.ownerUserId}` : 'Unassigned'}</span>
                           <span>•</span>
                           <span>Category: {dtl.category}</span>
                           <span>•</span>
@@ -519,7 +519,7 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
       authoritativeUrl: dtlib.authoritativeUrl,
       category: suggestion.category,
       tags: [],
-      owner: 'Unassigned',
+      ownerUserId: null,
       version: dtlib.version,
       reviewStatus: 'pending'
     });

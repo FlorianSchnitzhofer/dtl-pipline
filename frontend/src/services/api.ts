@@ -1,7 +1,10 @@
 // API Service for Digital Twins of Legislation
 // Handles all REST API communication with authentication
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'https://api.dtl.example.com/api';
+// Default to local backend when no explicit API base is configured
+const API_BASE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
+  'http://localhost:8000/api';
 
 // Types matching the API specification
 export type DTLibStatus = 'draft' | 'in-progress' | 'review' | 'approved';
@@ -29,7 +32,7 @@ export interface DTLAPI {
   dtlib_id: string;
   title: string;
   description?: string;
-  owner?: string;
+  owner_user_id?: number | null;
   version: string;
   legal_text: string;
   legal_reference: string;
@@ -228,12 +231,12 @@ export const dtlAPI = {
   // List DTLs
   list: async (
     dtlibId: string,
-    params?: { search?: string; status?: DTLReviewStatus; owner?: string }
+    params?: { search?: string; status?: DTLReviewStatus; owner_user_id?: number }
   ): Promise<DTLAPI[]> => {
     const queryParams = new URLSearchParams();
     if (params?.search) queryParams.set('search', params.search);
     if (params?.status) queryParams.set('status', params.status);
-    if (params?.owner) queryParams.set('owner', params.owner);
+    if (params?.owner_user_id) queryParams.set('owner_user_id', params.owner_user_id.toString());
     
     const query = queryParams.toString();
     return fetchAPI<DTLAPI[]>(`/dtlibs/${dtlibId}/dtls${query ? `?${query}` : ''}`);
@@ -245,9 +248,10 @@ export const dtlAPI = {
     legal_text: string;
     legal_reference: string;
     description?: string;
-    owner?: string;
+    owner_user_id?: number | null;
     classification?: string;
     tags?: string[];
+    version: string;
   }): Promise<DTLAPI> => {
     return fetchAPI<DTLAPI>(`/dtlibs/${dtlibId}/dtls`, {
       method: 'POST',
