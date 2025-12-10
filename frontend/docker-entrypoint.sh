@@ -1,8 +1,20 @@
 #!/bin/sh
 set -eu
 
-: "${BACKEND_BASE_URL:=http://backend:8000}" 
-: "${NGINX_RESOLVER:=127.0.0.11}" 
+: "${BACKEND_BASE_URL:=http://backend:8000}"
+
+# Derive a sensible resolver if one was not provided. This keeps the Docker
+# Compose default (Docker DNS at 127.0.0.11) while allowing platforms like
+# Azure App Service to use the nameservers defined in /etc/resolv.conf so the
+# backend host can be resolved successfully at runtime.
+if [ -z "${NGINX_RESOLVER:-}" ]; then
+  resolvers="$(awk '/^nameserver/{print $2}' /etc/resolv.conf | tr '\n' ' ' | xargs)"
+  if [ -n "$resolvers" ]; then
+    NGINX_RESOLVER="$resolvers"
+  else
+    NGINX_RESOLVER="127.0.0.11"
+  fi
+fi
 
 export BACKEND_BASE_URL NGINX_RESOLVER
 
