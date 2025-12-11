@@ -20,6 +20,14 @@ so requests are forwarded to the API instead of looping back to the public front
 host. Keep `VITE_API_BASE_URL` unset (or relative) so the browser uses the `/api`
 prefix and allows the server-side proxy to route traffic correctly.
 
+When publishing the stack on a single server, the provided `docker-compose.yml`
+exposes port 80 for the frontend and 8000 for the backend. The frontend container
+proxies `/api`, `/docs`, and `/openapi.json` to the backend so the UI can call the API
+without CORS issues while the API also remains reachable directly on port 8000. If the
+server will be accessed through a hostname, set `API_PUBLIC_BASE_URL` (for example,
+`https://example.com`) so the generated OpenAPI schema advertises the public URL, and
+adjust `VITE_API_BASE_URL` if you need a different path prefix.
+
 When the backend is deployed behind a TLS-terminating proxy (for example, on Azure App
 Service), set `AZURE_SITE_HOSTNAME` or `API_PUBLIC_BASE_URL` so the generated OpenAPI
 schema uses the external HTTPS URL. You can override the default path prefix with

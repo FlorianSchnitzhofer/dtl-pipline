@@ -19,6 +19,8 @@ services:
       SQL_DB_HOST: ${SQL_DB_HOST:-db}
       SQL_DB_USER: ${SQL_DB_USER:-dtl}
       SQL_DB_NAME: ${SQL_DB_NAME:-dtl}
+      API_PREFIX: ${API_PREFIX:-/api}
+      API_PUBLIC_BASE_URL: ${API_PUBLIC_BASE_URL:-http://localhost}
     ports:
       - "8000:8000"
     depends_on:
@@ -27,6 +29,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
     ports:
       - "80:80"
     depends_on:
