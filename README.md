@@ -15,6 +15,11 @@ Run `npm start` to build the frontend bundle and serve it from `server.js`. Requ
 REST API, Swagger UI, and OpenAPI schema are reachable from the same public host as the
 static site.
 
+For deployments, `API_PROXY_TARGET` must point to the actual backend service endpoint
+so requests are forwarded to the API instead of looping back to the public frontend
+host. Keep `VITE_API_BASE_URL` unset (or relative) so the browser uses the `/api`
+prefix and allows the server-side proxy to route traffic correctly.
+
 When the backend is deployed behind a TLS-terminating proxy (for example, on Azure App
 Service), set `AZURE_SITE_HOSTNAME` or `API_PUBLIC_BASE_URL` so the generated OpenAPI
 schema uses the external HTTPS URL. You can override the default path prefix with
