@@ -126,6 +126,7 @@ export default function App() {
   const [dtls, setDtls] = useState<DTL[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dtlLoadError, setDtlLoadError] = useState<string | null>(null);
 
   // Load DTLIBs on mount
   useEffect(() => {
@@ -146,7 +147,12 @@ export default function App() {
       const apiLibs = await dtlibAPI.list();
       setDtlibs(apiLibs.map(apiToUILib));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load DTLIBs');
+      setDtlibs([]);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to load DTLIBs from the backend'
+      );
     } finally {
       setLoading(false);
     }
@@ -154,9 +160,13 @@ export default function App() {
 
   const loadDTLs = async (dtlibId: string) => {
     try {
+      setDtlLoadError(null);
       const apiDtls = await dtlAPI.list(dtlibId);
       setDtls(apiDtls.map(apiToUIDTL));
     } catch (err) {
+      setDtls(prev => prev.filter(d => d.dtlibId !== dtlibId));
+      const message = err instanceof Error ? err.message : 'Failed to load DTLs';
+      setDtlLoadError(message);
       console.error('Failed to load DTLs:', err);
     }
   };
@@ -272,26 +282,26 @@ export default function App() {
     );
   }
 
-  if (error && view.type === 'list') {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <AlertCircle className="size-12 text-red-600 mx-auto mb-4" />
-          <h2 className="text-slate-900 mb-2">Error Loading Data</h2>
-          <p className="text-slate-600 mb-6">{error}</p>
-          <button
-            onClick={loadDTLibs}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50">
+      {view.type === 'list' && error && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
+            <AlertCircle className="size-5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">We couldn't load data from the backend.</p>
+              <p className="text-sm">The list below shows no items until the connection is restored.</p>
+            </div>
+            <button
+              onClick={loadDTLibs}
+              className="ml-auto px-4 py-2 bg-amber-100 text-amber-900 rounded-lg hover:bg-amber-200 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {view.type === 'list' && (
         <DTLibList
           dtlibs={dtlibs}
@@ -299,6 +309,15 @@ export default function App() {
           onCreateDTLib={handleCreateDTLib}
           onDeleteDTLib={handleDeleteDTLib}
         />
+      )}
+
+      {view.type === 'dtlib-detail' && dtlLoadError && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
+            <AlertCircle className="size-5 flex-shrink-0" />
+            <p>DTLs could not be loaded for this library: {dtlLoadError}</p>
+          </div>
+        </div>
       )}
 
       {view.type === 'dtlib-detail' && currentDTLib && (
