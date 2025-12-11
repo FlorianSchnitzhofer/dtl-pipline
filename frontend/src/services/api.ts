@@ -1,7 +1,7 @@
 // API Service for Digital Twins of Legislation
 // Handles all REST API communication with authentication
 
-const DEFAULT_API_BASE_URL = 'http://localhost:8000/api';
+const DEFAULT_API_BASE_URL = '/api';
 
 const normalizeBaseUrl = (raw: string | undefined) => {
   const cleaned = (raw || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
