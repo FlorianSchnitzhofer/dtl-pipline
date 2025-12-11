@@ -2,9 +2,26 @@
 // Handles all REST API communication with authentication
 
 // Default to same-origin API when no explicit base is configured
+const normalizeBaseUrl = (raw: string | undefined) => {
+  const cleaned = (raw || '/api').replace(/\/+$/, '');
+
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+    return cleaned;
+  }
+
+  // Treat relative paths (e.g., "/api") as relative to the current origin to
+  // avoid proxy redirect loops when the backend is unavailable.
+  try {
+    return new URL(cleaned, window.location.origin).toString().replace(/\/$/, '');
+  } catch {
+    return cleaned;
+  }
+};
+
 const API_BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
-  '/api';
+  typeof import.meta !== 'undefined'
+    ? normalizeBaseUrl(import.meta.env?.VITE_API_BASE_URL)
+    : '/api';
 
 const mapStatusToUI = (status: string | undefined, fallback: string) => {
   const normalized = (status || fallback).toLowerCase().replace(/\s+/g, '-');
@@ -168,7 +185,8 @@ async function fetchAPI<T>(
   }
   headers.set('Content-Type', 'application/json');
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
   });
