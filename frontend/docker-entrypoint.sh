@@ -1,7 +1,10 @@
 #!/bin/sh
 set -eu
 
-: "${BACKEND_BASE_URL:=http://dtlpipe-epcbdpbhatcdcqgk.germanywestcentral-01.azurewebsites.net:8000}"
+# Default to the Docker Compose backend service so the container works out of
+# the box (and in hosted environments where the backend is reachable via that
+# host/port) unless a BACKEND_BASE_URL override is provided at deploy time.
+: "${BACKEND_BASE_URL:=http://backend:8000}"
 : "${MAP_HASH_BUCKET_SIZE:=128}"
 
 # Ensure the backend URL always includes a scheme so Nginx does not error with
