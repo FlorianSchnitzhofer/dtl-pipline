@@ -13,6 +13,13 @@ case "$BACKEND_BASE_URL" in
     ;;
 esac
 
+# Extract the backend host (including port, if any) for loop protection inside
+# the Nginx template. When the backend is accidentally pointed at the same
+# host/port as the frontend, requests would be proxied back to the public site,
+# causing a redirect loop in the browser. Comparing against $http_host inside
+# Nginx lets us short-circuit with a 502 instead of entering that loop.
+BACKEND_BASE_HOST="$(printf '%s' "$BACKEND_BASE_URL" | sed -E 's#^[^/]+//([^/]+).*#\1#')"
+
 # Derive a sensible resolver if one was not provided. This keeps the Docker
 # Compose default (Docker DNS at 127.0.0.11) while allowing platforms like
 # Azure App Service to use the nameservers defined in /etc/resolv.conf so the
@@ -26,9 +33,9 @@ if [ -z "${NGINX_RESOLVER:-}" ]; then
   fi
 fi
 
-export BACKEND_BASE_URL NGINX_RESOLVER
+export BACKEND_BASE_URL BACKEND_BASE_HOST NGINX_RESOLVER
 
-envsubst '${BACKEND_BASE_URL} ${NGINX_RESOLVER}' \
+envsubst '${BACKEND_BASE_URL} ${BACKEND_BASE_HOST} ${NGINX_RESOLVER}' \
   < /etc/nginx/templates/default.conf.template \
   > /etc/nginx/conf.d/default.conf
 
