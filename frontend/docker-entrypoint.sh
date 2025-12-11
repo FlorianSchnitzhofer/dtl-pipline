@@ -2,6 +2,7 @@
 set -eu
 
 : "${BACKEND_BASE_URL:=http://dtlpipe-epcbdpbhatcdcqgk.germanywestcentral-01.azurewebsites.net:8000}"
+: "${MAP_HASH_BUCKET_SIZE:=128}"
 
 # Ensure the backend URL always includes a scheme so Nginx does not error with
 # "invalid URL prefix" when a bare host name is provided (e.g., when set via
@@ -33,9 +34,9 @@ if [ -z "${NGINX_RESOLVER:-}" ]; then
   fi
 fi
 
-export BACKEND_BASE_URL BACKEND_BASE_HOST NGINX_RESOLVER
+export BACKEND_BASE_URL BACKEND_BASE_HOST MAP_HASH_BUCKET_SIZE NGINX_RESOLVER
 
-envsubst '${BACKEND_BASE_URL} ${BACKEND_BASE_HOST} ${NGINX_RESOLVER}' \
+envsubst '${BACKEND_BASE_URL} ${BACKEND_BASE_HOST} ${MAP_HASH_BUCKET_SIZE} ${NGINX_RESOLVER}' \
   < /etc/nginx/templates/default.conf.template \
   > /etc/nginx/conf.d/default.conf
 
