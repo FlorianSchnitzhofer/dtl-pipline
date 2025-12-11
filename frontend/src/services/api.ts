@@ -1,27 +1,17 @@
 // API Service for Digital Twins of Legislation
 // Handles all REST API communication with authentication
 
-// Default to same-origin API when no explicit base is configured
+const DEFAULT_API_BASE_URL = 'http://localhost:8000/api';
+
 const normalizeBaseUrl = (raw: string | undefined) => {
-  const cleaned = (raw || '/api').replace(/\/+$/, '');
-
-  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
-    return cleaned;
-  }
-
-  // Treat relative paths (e.g., "/api") as relative to the current origin to
-  // avoid proxy redirect loops when the backend is unavailable.
-  try {
-    return new URL(cleaned, window.location.origin).toString().replace(/\/$/, '');
-  } catch {
-    return cleaned;
-  }
+  const cleaned = (raw || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
+  return cleaned;
 };
 
 const API_BASE_URL =
   typeof import.meta !== 'undefined'
     ? normalizeBaseUrl(import.meta.env?.VITE_API_BASE_URL)
-    : '/api';
+    : DEFAULT_API_BASE_URL;
 
 const mapStatusToUI = (status: string | undefined, fallback: string) => {
   const normalized = (status || fallback).toLowerCase().replace(/\s+/g, '-');
@@ -31,7 +21,7 @@ const mapStatusToUI = (status: string | undefined, fallback: string) => {
 export const normalizeDTLibStatus = (status?: string): DTLibStatus => {
   const normalized = mapStatusToUI(status, 'draft');
   const allowed: DTLibStatus[] = ['draft', 'in-progress', 'review', 'approved'];
-  return allowed.includes(normalized as DTLibStatus) ? normalized as DTLibStatus : 'draft';
+  return allowed.includes(normalized as DTLibStatus) ? (normalized as DTLibStatus) : 'draft';
 };
 
 export const normalizeDTLStatus = (status?: string): DTLReviewStatus => {
@@ -173,12 +163,9 @@ function getAuthToken(): string {
   return localStorage.getItem('auth_token') || '';
 }
 
-async function fetchAPI<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getAuthToken();
-  
+
   const headers = new Headers(options.headers);
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
@@ -219,7 +206,7 @@ export const dtlibAPI = {
     if (params?.status) queryParams.set('status', params.status);
     if (params?.limit) queryParams.set('limit', params.limit.toString());
     if (params?.offset) queryParams.set('offset', params.offset.toString());
-    
+
     const query = queryParams.toString();
     return fetchAPI<DTLibAPI[]>(`/dtlibs${query ? `?${query}` : ''}`);
   },
@@ -300,29 +287,32 @@ export const dtlAPI = {
   // List DTLs
   list: async (
     dtlibId: string,
-    params?: { search?: string; status?: DTLReviewStatus; owner_user_id?: number }
+    params?: { search?: string; status?: DTLReviewStatus; owner_user_id?: number },
   ): Promise<DTLAPI[]> => {
     const queryParams = new URLSearchParams();
     if (params?.search) queryParams.set('search', params.search);
     if (params?.status) queryParams.set('status', params.status);
     if (params?.owner_user_id) queryParams.set('owner_user_id', params.owner_user_id.toString());
-    
+
     const query = queryParams.toString();
     return fetchAPI<DTLAPI[]>(`/dtlibs/${dtlibId}/dtls${query ? `?${query}` : ''}`);
   },
 
   // Create DTL
-  create: async (dtlibId: string, data: {
-    title: string;
-    legal_text: string;
-    legal_reference: string;
-    description?: string;
-    owner_user_id?: number | null;
-    classification?: string;
-    tags?: string[];
-    version: string;
-    status?: DTLReviewStatus;
-  }): Promise<DTLAPI> => {
+  create: async (
+    dtlibId: string,
+    data: {
+      title: string;
+      legal_text: string;
+      legal_reference: string;
+      description?: string;
+      owner_user_id?: number | null;
+      classification?: string;
+      tags?: string[];
+      version: string;
+      status?: DTLReviewStatus;
+    },
+  ): Promise<DTLAPI> => {
     return fetchAPI<DTLAPI>(`/dtlibs/${dtlibId}/dtls`, {
       method: 'POST',
       body: JSON.stringify({
@@ -341,7 +331,7 @@ export const dtlAPI = {
   update: async (
     dtlibId: string,
     dtlId: string,
-    data: Partial<DTLAPI>
+    data: Partial<DTLAPI>,
   ): Promise<DTLAPI> => {
     return fetchAPI<DTLAPI>(`/dtlibs/${dtlibId}/dtls/${dtlId}`, {
       method: 'PUT',
@@ -375,11 +365,7 @@ export const ontologyAPI = {
   },
 
   // Save ontology
-  save: async (
-    dtlibId: string,
-    dtlId: string,
-    data: OntologyData
-  ): Promise<OntologyData> => {
+  save: async (dtlibId: string, dtlId: string, data: OntologyData): Promise<OntologyData> => {
     return fetchAPI<OntologyData>(`/dtlibs/${dtlibId}/dtls/${dtlId}/ontology`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -391,7 +377,7 @@ export const ontologyAPI = {
     try {
       return await fetchAPI<OntologyData>(
         `/dtlibs/${dtlibId}/dtls/${dtlId}/ontology/generate`,
-        { method: 'POST' }
+        { method: 'POST' },
       );
     } catch (error) {
       if (error instanceof APIError && error.status === 204) {
@@ -417,11 +403,7 @@ export const interfaceAPI = {
   },
 
   // Save interface
-  save: async (
-    dtlibId: string,
-    dtlId: string,
-    data: InterfaceData
-  ): Promise<InterfaceData> => {
+  save: async (dtlibId: string, dtlId: string, data: InterfaceData): Promise<InterfaceData> => {
     return fetchAPI<InterfaceData>(`/dtlibs/${dtlibId}/dtls/${dtlId}/interface`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -433,7 +415,7 @@ export const interfaceAPI = {
     try {
       return await fetchAPI<InterfaceData>(
         `/dtlibs/${dtlibId}/dtls/${dtlId}/interface/generate`,
-        { method: 'POST' }
+        { method: 'POST' },
       );
     } catch (error) {
       if (error instanceof APIError && error.status === 204) {
@@ -450,7 +432,7 @@ export const configurationAPI = {
   get: async (dtlibId: string, dtlId: string): Promise<ConfigurationData | null> => {
     try {
       return await fetchAPI<ConfigurationData>(
-        `/dtlibs/${dtlibId}/dtls/${dtlId}/configuration`
+        `/dtlibs/${dtlibId}/dtls/${dtlId}/configuration`,
       );
     } catch (error) {
       if (error instanceof APIError && error.status === 204) {
@@ -461,29 +443,22 @@ export const configurationAPI = {
   },
 
   // Save configuration
-  save: async (
-    dtlibId: string,
-    dtlId: string,
-    data: ConfigurationData
-  ): Promise<ConfigurationData> => {
+  save: async (dtlibId: string, dtlId: string, data: ConfigurationData): Promise<ConfigurationData> => {
     return fetchAPI<ConfigurationData>(
       `/dtlibs/${dtlibId}/dtls/${dtlId}/configuration`,
       {
         method: 'PUT',
         body: JSON.stringify(data),
-      }
+      },
     );
   },
 
   // Generate configuration proposal
-  generate: async (
-    dtlibId: string,
-    dtlId: string
-  ): Promise<ConfigurationData | null> => {
+  generate: async (dtlibId: string, dtlId: string): Promise<ConfigurationData | null> => {
     try {
       return await fetchAPI<ConfigurationData>(
         `/dtlibs/${dtlibId}/dtls/${dtlId}/configuration/generate`,
-        { method: 'POST' }
+        { method: 'POST' },
       );
     } catch (error) {
       if (error instanceof APIError && error.status === 204) {
@@ -510,7 +485,7 @@ export const testAPI = {
       input: any;
       expected_output: any;
       description?: string;
-    }
+    },
   ): Promise<TestCase> => {
     return fetchAPI<TestCase>(`/dtlibs/${dtlibId}/dtls/${dtlId}/tests`, {
       method: 'POST',
@@ -528,7 +503,7 @@ export const testAPI = {
     dtlibId: string,
     dtlId: string,
     testId: string,
-    data: Partial<TestCase>
+    data: Partial<TestCase>,
   ): Promise<TestCase> => {
     return fetchAPI<TestCase>(`/dtlibs/${dtlibId}/dtls/${dtlId}/tests/${testId}`, {
       method: 'PUT',
@@ -544,10 +519,7 @@ export const testAPI = {
   },
 
   // Run tests
-  run: async (
-    dtlibId: string,
-    dtlId: string
-  ): Promise<{ results: Array<TestCase & { actual_output?: any }> }> => {
+  run: async (dtlibId: string, dtlId: string): Promise<{ results: Array<TestCase & { actual_output?: any }> }> => {
     return fetchAPI(`/dtlibs/${dtlibId}/dtls/${dtlId}/tests/run`, {
       method: 'POST',
     });
@@ -558,7 +530,7 @@ export const testAPI = {
     try {
       return await fetchAPI<TestCase[]>(
         `/dtlibs/${dtlibId}/dtls/${dtlId}/tests/generate`,
-        { method: 'POST' }
+        { method: 'POST' },
       );
     } catch (error) {
       if (error instanceof APIError && error.status === 204) {
@@ -584,11 +556,7 @@ export const logicAPI = {
   },
 
   // Save logic
-  save: async (
-    dtlibId: string,
-    dtlId: string,
-    data: LogicData
-  ): Promise<{ updated_at: string }> => {
+  save: async (dtlibId: string, dtlId: string, data: LogicData): Promise<{ updated_at: string }> => {
     return fetchAPI(`/dtlibs/${dtlibId}/dtls/${dtlId}/logic`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -600,7 +568,7 @@ export const logicAPI = {
     try {
       return await fetchAPI<LogicData>(
         `/dtlibs/${dtlibId}/dtls/${dtlId}/logic/generate`,
-        { method: 'POST' }
+        { method: 'POST' },
       );
     } catch (error) {
       if (error instanceof APIError && error.status === 204) {
@@ -622,7 +590,7 @@ export const reviewAPI = {
   approve: async (
     dtlibId: string,
     dtlId: string,
-    data?: { comment?: string; approved_version?: string }
+    data?: { comment?: string; approved_version?: string },
   ): Promise<{ status: string; approved_at: string }> => {
     return fetchAPI(`/dtlibs/${dtlibId}/dtls/${dtlId}/approve`, {
       method: 'POST',
@@ -634,7 +602,7 @@ export const reviewAPI = {
   requestRevision: async (
     dtlibId: string,
     dtlId: string,
-    data?: { comment?: string }
+    data?: { comment?: string },
   ): Promise<{ status: string }> => {
     return fetchAPI(`/dtlibs/${dtlibId}/dtls/${dtlId}/request-revision`, {
       method: 'POST',
@@ -651,7 +619,7 @@ export const reviewAPI = {
   addComment: async (
     dtlibId: string,
     dtlId: string,
-    data: { comment: string; type?: string }
+    data: { comment: string; type?: string },
   ): Promise<ReviewComment> => {
     return fetchAPI<ReviewComment>(`/dtlibs/${dtlibId}/dtls/${dtlId}/comments`, {
       method: 'POST',
