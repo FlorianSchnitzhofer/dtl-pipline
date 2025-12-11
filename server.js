@@ -6,6 +6,7 @@ const path = require('path');
 const distDir = path.join(__dirname, 'dist');
 const port = parseInt(process.env.PORT || '4173', 10);
 const apiTarget = process.env.API_PROXY_TARGET || 'http://localhost:8000';
+const apiTargetUrl = new URL(apiTarget);
 
 if (!fs.existsSync(distDir)) {
   console.error('Build output not found at', distDir);
@@ -30,8 +31,17 @@ const mimeTypes = {
 
 const fallbackFile = path.join(distDir, 'index.html');
 
+function isSelfProxy(req) {
+  const requestHost = req.headers.host;
+  if (!requestHost) {
+    return false;
+  }
+
+  return requestHost === apiTargetUrl.host;
+}
+
 function proxyToBackend(req, res) {
-  const targetUrl = new URL(req.url, apiTarget);
+  const targetUrl = new URL(req.url, apiTargetUrl);
   const client = targetUrl.protocol === 'https:' ? https : http;
 
   const proxyReq = client.request(
@@ -67,6 +77,17 @@ const server = http.createServer((req, res) => {
   );
 
   if (shouldProxy) {
+    if (isSelfProxy(req)) {
+      const message = 'API_PROXY_TARGET resolves to the current host. Refusing to proxy to avoid a loop.';
+      console.error(message, { requestHost: req.headers.host, apiTarget: apiTargetUrl.href });
+
+      if (!res.headersSent) {
+        res.writeHead(502, { 'Content-Type': 'text/plain' });
+      }
+      res.end('Bad Gateway: API_PROXY_TARGET points to the frontend host.');
+      return;
+    }
+
     proxyToBackend(req, res);
     return;
   }
@@ -99,4 +120,16 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`Server running at http://0.0.0.0:${port}`);
+
+  const localHosts = new Set([
+    `0.0.0.0:${port}`,
+    `127.0.0.1:${port}`,
+    `localhost:${port}`,
+  ]);
+
+  if (localHosts.has(apiTargetUrl.host)) {
+    console.warn(
+      'Warning: API_PROXY_TARGET points to the frontend host. Requests will be rejected to avoid proxy loops.'
+    );
+  }
 });
