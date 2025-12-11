@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000';
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -55,5 +57,19 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    proxy: {
+      '/api': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+      '/docs': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+      '/openapi.json': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+    },
   },
 });
