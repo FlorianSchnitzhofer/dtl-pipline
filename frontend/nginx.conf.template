@@ -1,3 +1,8 @@
+map $http_host $is_self_proxy {
+  default 0;
+  ${BACKEND_BASE_HOST} 1;
+}
+
 server {
   listen 80;
   root /usr/share/nginx/html;
@@ -11,6 +16,10 @@ server {
   }
 
   location /api/ {
+    if ($is_self_proxy) {
+      return 502;
+    }
+
     # Allow the backend host to be configured at runtime (e.g., Azure App Service)
     # while still working with the default Docker Compose setup.
     resolver ${NGINX_RESOLVER};
