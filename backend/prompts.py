@@ -47,9 +47,8 @@ ONTOLOGY_PROMPT = PromptTemplate(
         "Translate the legal text into exactly one OWL file representing the ontology only—no logic or rules—and return it as strict JSON with no prose.\n"
         "Return a JSON object with key `ontology_owl` (string).\n"
         "The ontology_owl must be valid, consistent, error-free OWL with only semantic definitions of key terms of the law text\n"
-        "Keep IRIs stable, add rdfs:label for readability, and align the ontology to the provided reference.\n"
+        "Keep the OWL string stable, add rdfs:label for readability.\n"
         "Title: {title}\n"
-        "Reference: {reference}\n"
         "Relevant legal text:\n{legal_text}"
     ),
 )
