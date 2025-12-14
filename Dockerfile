@@ -1,22 +1,35 @@
-# Build stage
-FROM node:18 AS build
-WORKDIR /app
+# Build frontend assets
+FROM node:18 AS frontend-build
+WORKDIR /app/frontend
 
-# Install dependencies
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm ci --no-optional
 
-# Build application
 COPY frontend ./
-ARG VITE_API_BASE_URL
+ARG VITE_API_BASE_URL=/api
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
+# Runtime image with backend + static assets
+FROM python:3.11-slim
+WORKDIR /app
 
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+COPY backend /app/backend
+COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
+
+ENV SQL_DB_HOST=db \
+    SQL_DB_USER=dtl \
+    SQL_DB_NAME=dtl \
+    SQL_DB_PASSWORD=dtl \
+    API_PREFIX=/api \
+    FRONTEND_DIST_PATH=/app/frontend/dist
+
+EXPOSE 8000
+
+CMD ["bash", "-lc", "PORT=${PORT:-8000}; uvicorn backend.app:app --host 0.0.0.0 --port ${PORT}"]

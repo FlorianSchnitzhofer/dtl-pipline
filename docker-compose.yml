@@ -10,10 +10,12 @@ services:
       MARIADB_PASSWORD: dtl
     ports:
       - "3306:3306"
-  backend:
+  app:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
     environment:
       SQL_DB_PASSWORD: ${SQL_DB_PASSWORD:-dtl}
       SQL_DB_HOST: ${SQL_DB_HOST:-db}
@@ -21,17 +23,8 @@ services:
       SQL_DB_NAME: ${SQL_DB_NAME:-dtl}
       API_PREFIX: ${API_PREFIX:-/api}
       API_PUBLIC_BASE_URL: ${API_PUBLIC_BASE_URL:-http://localhost}
+      FRONTEND_DIST_PATH: /app/frontend/dist
     ports:
-      - "8000:8000"
+      - "80:8000"
     depends_on:
       - db
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
-    ports:
-      - "80:80"
-    depends_on:
-      - backend

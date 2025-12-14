@@ -25,7 +25,9 @@ class APISettings:
 
         public_base_url = os.getenv("API_PUBLIC_BASE_URL")
         if not public_base_url:
-            azure_hostname = os.getenv("AZURE_SITE_HOSTNAME")
+            azure_hostname = os.getenv("AZURE_SITE_HOSTNAME") or os.getenv(
+                "WEBSITE_HOSTNAME"
+            )
             if azure_hostname:
                 scheme = os.getenv("API_PUBLIC_SCHEME", "https")
                 public_base_url = f"{scheme}://{azure_hostname}"

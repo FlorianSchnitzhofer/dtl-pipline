@@ -9,24 +9,18 @@
 
 Run `npm run dev` to start the development server.
 
-Run `npm start` to build the frontend bundle and serve it from `server.js`. Requests to
-`/api`, `/docs`, and `/openapi.json` are proxied to the backend URL set by the
-`API_PROXY_TARGET` environment variable (defaults to `http://localhost:8000`), so the
-REST API, Swagger UI, and OpenAPI schema are reachable from the same public host as the
-static site.
-
-For deployments, `API_PROXY_TARGET` must point to the actual backend service endpoint
-so requests are forwarded to the API instead of looping back to the public frontend
-host. Keep `VITE_API_BASE_URL` unset (or relative) so the browser uses the `/api`
-prefix and allows the server-side proxy to route traffic correctly.
+Run `npm start` to build the frontend bundle and serve it from `server.js` during local
+development. For production deployments, the provided `Dockerfile` now builds the
+frontend, installs the backend, and serves both from the same container via FastAPI.
+`/api`, `/docs`, and `/openapi.json` are handled by the backend, while all other paths
+fall back to the built SPA so the UI and API share a single public origin.
 
 When publishing the stack on a single server, the provided `docker-compose.yml`
-exposes port 80 for the frontend and 8000 for the backend. The frontend container
-proxies `/api`, `/docs`, and `/openapi.json` to the backend so the UI can call the API
-without CORS issues while the API also remains reachable directly on port 8000. If the
-server will be accessed through a hostname, set `API_PUBLIC_BASE_URL` (for example,
-`https://example.com`) so the generated OpenAPI schema advertises the public URL, and
-adjust `VITE_API_BASE_URL` if you need a different path prefix.
+runs the database and a single application container that serves both the frontend and
+backend on port 80 (mapped to the container's port 8000). If the server will be
+accessed through a hostname, set `API_PUBLIC_BASE_URL` (for example, `https://example.com`)
+so the generated OpenAPI schema advertises the public URL, and adjust
+`VITE_API_BASE_URL` if you need a different path prefix.
 
 When the backend is deployed behind a TLS-terminating proxy (for example, on Azure App
 Service), set `AZURE_SITE_HOSTNAME` or `API_PUBLIC_BASE_URL` so the generated OpenAPI
