@@ -97,7 +97,7 @@ TEST_PROMPT = PromptTemplate(
 LOGIC_PROMPT = PromptTemplate(
     description="Generate executable pseudo code",
     template=(
-        "Write runnable pseudo code for the Digital Twin Law in Python style.\n"
+        "Write runnable python code for the logic layer of a Digital Twin Law.\n"
         "Return a JSON object with keys `language` (string) and `code` (string).\n"
         "Prepend the code with inline comments explaining the legal reasoning.\n"
         "DTL Title: {title}\n"
