@@ -10,6 +10,7 @@ from .. import models, schemas
 from ..database import get_db
 from ..dependencies import resolve_dtlib
 from ..llm import llm_service
+from ..prompts import prompt_builder
 
 router = APIRouter(prefix="/dtlibs", tags=["dtlibs"])
 
@@ -65,22 +66,41 @@ def delete_dtlib(db: Session = Depends(get_db), dtlib: models.DTLIB = Depends(re
 def segment_dtlib(db: Session = Depends(get_db), dtlib: models.DTLIB = Depends(resolve_dtlib)):
     if not dtlib.full_text:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="full_text required")
-    prompt = (
-        "Segment the following law text into high-level functions. Return 3 names with references.\n"
-        f"{dtlib.full_text[:4000]}"
+    prompt = prompt_builder.segmentation(
+        law_name=dtlib.law_name,
+        law_identifier=dtlib.law_identifier,
+        full_text=dtlib.full_text[:4000],
     )
-    raw = llm_service.generate_text(prompt)
-    suggestion = models.SegmentationSuggestion(
-        dtlib_id=dtlib.id,
-        suggestion_title="LLM Proposed Segment",
-        suggestion_description=raw[:255],
-        legal_text=dtlib.full_text[:500],
-        legal_reference="Auto",
-    )
-    db.add(suggestion)
+    raw, parsed = llm_service.generate_structured(prompt)
+
+    suggestions: list[models.SegmentationSuggestion] = []
+    if isinstance(parsed, dict) and isinstance(parsed.get("segments"), list):
+        for index, segment in enumerate(parsed["segments"][:5]):
+            suggestion = models.SegmentationSuggestion(
+                dtlib_id=dtlib.id,
+                suggestion_title=segment.get("title") or f"LLM Segment {index + 1}",
+                suggestion_description=segment.get("description") or raw[:255],
+                legal_text=dtlib.full_text[:500],
+                legal_reference=segment.get("legal_reference") or "Auto",
+            )
+            db.add(suggestion)
+            suggestions.append(suggestion)
+
+    if not suggestions:
+        fallback = models.SegmentationSuggestion(
+            dtlib_id=dtlib.id,
+            suggestion_title="LLM Proposed Segment",
+            suggestion_description=raw[:255],
+            legal_text=dtlib.full_text[:500],
+            legal_reference="Auto",
+        )
+        db.add(fallback)
+        suggestions.append(fallback)
+
     db.commit()
-    db.refresh(suggestion)
-    return [suggestion]
+    for suggestion in suggestions:
+        db.refresh(suggestion)
+    return suggestions
 
 
 @router.get("/{dtlib_id}/overview", response_model=schemas.OverviewSnapshot)

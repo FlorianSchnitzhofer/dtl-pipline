@@ -1,6 +1,8 @@
+import json
 import logging
 import os
-from typing import Optional
+import re
+from typing import Any, Optional, Tuple
 
 from openai import AzureOpenAI
 
@@ -49,7 +51,27 @@ class LLMService:
                 exc,
                 exc_info=True,
             )
-            return  f"[No LLM-Response] {prompt[:120]}..."
+            return f"[No LLM-Response] {prompt[:120]}..."
+
+    def generate_structured(self, prompt: str) -> Tuple[str, Any]:
+        """Return the raw text and a best-effort JSON-decoded object."""
+
+        raw = self.generate_text(prompt)
+        parsed = self._parse_json_response(raw)
+        return raw, parsed
+
+    def _parse_json_response(self, text: str) -> Any:
+        candidates = [text]
+        codeblock_match = re.search(r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```", text, re.DOTALL)
+        if codeblock_match:
+            candidates.insert(0, codeblock_match.group(1))
+
+        for candidate in candidates:
+            try:
+                return json.loads(candidate)
+            except Exception:
+                continue
+        return None
 
     def _get_temperature(self) -> Optional[float]:
         raw_temperature = os.getenv("AZURE_OPENAI_TEMPERATURE")

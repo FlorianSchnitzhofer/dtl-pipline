@@ -10,6 +10,7 @@ from .. import models, schemas
 from ..database import get_db
 from ..dependencies import get_dtlib_or_404, resolve_dtlib, resolve_dtl
 from ..llm import llm_service
+from ..prompts import prompt_builder
 
 router = APIRouter(prefix="/dtlibs/{dtlib_id}/dtls", tags=["dtls"])
 
@@ -116,9 +117,16 @@ def save_ontology(
 
 @router.post("/{dtl_id}/ontology/generate", response_model=schemas.OntologyPayload)
 def generate_ontology(dtl: models.DTL = Depends(resolve_dtl)):
-    prompt = f"Create OWL ontology for the following legal text: {dtl.legal_text[:2000]}"
-    content = llm_service.generate_text(prompt)
-    return schemas.OntologyPayload(ontology_owl=content)
+    prompt = prompt_builder.ontology(
+        title=dtl.title,
+        reference=dtl.legal_reference,
+        legal_text=dtl.legal_text[:2000],
+    )
+    raw, parsed = llm_service.generate_structured(prompt)
+    ontology_owl = raw
+    if isinstance(parsed, dict) and parsed.get("ontology_owl"):
+        ontology_owl = parsed["ontology_owl"]
+    return schemas.OntologyPayload(ontology_owl=ontology_owl)
 
 
 @router.get("/{dtl_id}/interface", response_model=schemas.InterfacePayload | None)
@@ -155,12 +163,23 @@ def save_interface(
 
 @router.post("/{dtl_id}/interface/generate", response_model=schemas.InterfacePayload)
 def generate_interface(dtl: models.DTL = Depends(resolve_dtl)):
-    prompt = f"Propose input/output schema for function: {dtl.title}. Context: {dtl.legal_text[:1000]}"
-    content = llm_service.generate_text(prompt)
+    prompt = prompt_builder.interface(title=dtl.title, legal_text=dtl.legal_text[:1500])
+    raw, parsed = llm_service.generate_structured(prompt)
+
+    interface_data = {
+        "function_name": dtl.title,
+        "inputs": [],
+        "outputs": [],
+        "mcp_spec": {"hint": raw},
+    }
+    if isinstance(parsed, dict):
+        interface_data.update({k: v for k, v in parsed.items() if k in {"function_name", "inputs", "outputs", "mcp_spec"}})
+
     return schemas.InterfacePayload(
-        function_name=dtl.title,
-        inputs=[{"name": "input", "description": content[:120]}],
-        outputs=[{"name": "result", "description": content[:120]}],
+        function_name=interface_data.get("function_name") or dtl.title,
+        inputs=interface_data.get("inputs") or [{"name": "input", "description": raw[:200]}],
+        outputs=interface_data.get("outputs") or [{"name": "result", "description": raw[:200]}],
+        mcp_spec=interface_data.get("mcp_spec"),
     )
 
 
@@ -188,9 +207,12 @@ def save_configuration(
 
 @router.post("/{dtl_id}/configuration/generate", response_model=schemas.ConfigurationPayload)
 def generate_configuration(dtl: models.DTL = Depends(resolve_dtl)):
-    prompt = f"Extract configuration parameters (rates, thresholds) as OWL from: {dtl.legal_text[:1500]}"
-    content = llm_service.generate_text(prompt)
-    return schemas.ConfigurationPayload(configuration_owl=content)
+    prompt = prompt_builder.configuration(title=dtl.title, legal_text=dtl.legal_text[:1500])
+    raw, parsed = llm_service.generate_structured(prompt)
+    configuration_owl = raw
+    if isinstance(parsed, dict) and parsed.get("configuration_owl"):
+        configuration_owl = parsed["configuration_owl"]
+    return schemas.ConfigurationPayload(configuration_owl=configuration_owl)
 
 
 @router.get("/{dtl_id}/tests", response_model=List[schemas.TestCaseRead])
@@ -281,19 +303,37 @@ def run_tests(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_d
 
 @router.post("/{dtl_id}/tests/generate", response_model=List[schemas.TestCaseRead])
 def generate_tests(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
-    prompt = f"Generate 2 JSON test cases for DTL: {dtl.title}."
-    content = llm_service.generate_text(prompt)
-    test = models.DTLTest(
-        dtl_id=dtl.id,
-        name="LLM Proposed Test",
-        input_json={"prompt": content[:30]},
-        expected_output_json={"expected": content[:30]},
-        description=content[:120],
-    )
-    db.add(test)
+    prompt = prompt_builder.tests(title=dtl.title, legal_text=dtl.legal_text[:1500])
+    raw, parsed = llm_service.generate_structured(prompt)
+
+    created_tests: list[models.DTLTest] = []
+    if isinstance(parsed, dict) and isinstance(parsed.get("tests"), list):
+        for index, proposed in enumerate(parsed["tests"]):
+            test = models.DTLTest(
+                dtl_id=dtl.id,
+                name=proposed.get("name") or f"LLM Test {index + 1}",
+                input_json=proposed.get("input") or {"hint": raw[:80]},
+                expected_output_json=proposed.get("expected_output") or {"expected": raw[:80]},
+                description=proposed.get("description") or raw[:255],
+            )
+            db.add(test)
+            created_tests.append(test)
+
+    if not created_tests:
+        fallback = models.DTLTest(
+            dtl_id=dtl.id,
+            name="LLM Proposed Test",
+            input_json={"prompt": raw[:120]},
+            expected_output_json={"expected": raw[:120]},
+            description=raw[:255],
+        )
+        db.add(fallback)
+        created_tests.append(fallback)
+
     db.commit()
-    db.refresh(test)
-    return [_serialize_test(test)]
+    for test in created_tests:
+        db.refresh(test)
+    return [_serialize_test(test) for test in created_tests]
 
 
 @router.get("/{dtl_id}/logic", response_model=schemas.LogicPayload | None)
@@ -321,9 +361,18 @@ def save_logic(
 
 @router.post("/{dtl_id}/logic/generate", response_model=schemas.LogicPayload)
 def generate_logic(dtl: models.DTL = Depends(resolve_dtl)):
-    prompt = f"Draft executable pseudo-code for: {dtl.title}. Context: {dtl.legal_text[:1000]}"
-    code = llm_service.generate_text(prompt)
-    return schemas.LogicPayload(language="Python", code=code)
+    prompt = prompt_builder.logic(title=dtl.title, legal_text=dtl.legal_text[:1200])
+    raw, parsed = llm_service.generate_structured(prompt)
+
+    language = "Python"
+    code = raw
+    if isinstance(parsed, dict):
+        language = parsed.get("language") or language
+        if parsed.get("code"):
+            code = parsed["code"]
+
+    annotated_code = f"# LLM Hint: {raw[:200]}\n{code}"
+    return schemas.LogicPayload(language=language, code=annotated_code)
 
 
 @router.get("/{dtl_id}/review", response_model=schemas.ReviewRead)
