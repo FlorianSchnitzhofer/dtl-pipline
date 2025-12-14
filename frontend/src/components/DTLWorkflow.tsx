@@ -209,7 +209,9 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
     if (payload) {
       setOntology(payload);
       setRawResponses((prev) => ({ ...prev, ontology: payload.ontology_owl }));
+      return payload.ontology_owl;
     }
+    return null;
   };
 
   const handleSaveInterface = async (data: InterfaceData) => {
@@ -235,7 +237,9 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
     if (payload) {
       setConfiguration(payload);
       setRawResponses((prev) => ({ ...prev, configuration: payload.configuration_owl }));
+      return payload.configuration_owl;
     }
+    return null;
   };
 
   const handleGenerateTests = async () => {
@@ -676,7 +680,7 @@ function OntologyStage({
   ontology: OntologyData | null;
   rawResponse?: string;
   isLoading: boolean;
-  onGenerate: () => Promise<void>;
+  onGenerate: () => Promise<string | null>;
   onSave: (value: string) => Promise<void>;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -690,7 +694,10 @@ function OntologyStage({
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    await onGenerate();
+    const generated = await onGenerate();
+    if (generated) {
+      setOwlContent(generated);
+    }
     setIsGenerating(false);
   };
 
@@ -990,7 +997,7 @@ function ConfigurationStage({
   configuration: ConfigurationData | null;
   rawResponse?: string;
   isLoading: boolean;
-  onGenerate: () => Promise<void>;
+  onGenerate: () => Promise<string | null>;
   onSave: (value: string) => Promise<void>;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -1004,7 +1011,10 @@ function ConfigurationStage({
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    await onGenerate();
+    const generated = await onGenerate();
+    if (generated) {
+      setConfigOwl(generated);
+    }
     setIsGenerating(false);
   };
 

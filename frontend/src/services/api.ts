@@ -123,6 +123,7 @@ export interface InterfaceData {
   function_name: string;
   inputs: Array<{ name: string; type: string; description?: string }>;
   outputs: Array<{ name: string; type: string; description?: string }>;
+  mcp_spec?: any;
 }
 
 export interface ConfigurationParameter {
@@ -133,7 +134,8 @@ export interface ConfigurationParameter {
 }
 
 export interface ConfigurationData {
-  parameters: ConfigurationParameter[];
+  configuration_owl: string;
+  parameters?: ConfigurationParameter[];
 }
 
 export interface LogicData {
