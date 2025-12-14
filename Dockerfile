@@ -30,6 +30,6 @@ ENV SQL_DB_HOST=db \
     API_PREFIX=/api \
     FRONTEND_DIST_PATH=/app/frontend/dist
 
-EXPOSE 8000
+EXPOSE 80
 
-CMD ["bash", "-lc", "PORT=${PORT:-8000}; uvicorn backend.app:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["bash", "-lc", "PORT=${PORT:-80}; uvicorn backend.app:app --host 0.0.0.0 --port ${PORT}"]
