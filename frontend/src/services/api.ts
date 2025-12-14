@@ -97,11 +97,12 @@ export interface DTLAPI {
 }
 
 export interface SegmentationSuggestion {
-  suggestion_id: string;
-  title: string;
-  description: string;
+  id: number;
+  suggestion_title: string;
+  suggestion_description?: string | null;
   legal_text: string;
   legal_reference: string;
+  created_by?: number | null;
 }
 
 export interface TestCase {
