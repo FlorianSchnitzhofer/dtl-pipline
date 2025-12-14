@@ -420,7 +420,9 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
             <OntologyStage
               dtl={dtl}
               ontology={ontology}
-              rawResponse={rawResponses.ontology}
+              rawResponse={
+                rawResponses.ontology ?? ontology?.raw_response ?? ontology?.ontology_owl
+              }
               isLoading={isLoadingArtifacts}
               onGenerate={handleGenerateOntology}
               onSave={handleSaveOntology}
