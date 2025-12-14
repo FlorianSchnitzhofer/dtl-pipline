@@ -118,6 +118,7 @@ class SegmentationSuggestionRead(SegmentationSuggestionCreate):
 
 class OntologyPayload(BaseModel):
     ontology_owl: str
+    raw_response: str | None = None
 
 
 class InterfacePayload(BaseModel):
