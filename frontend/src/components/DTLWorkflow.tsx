@@ -140,10 +140,10 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
         setConfiguration(existingConfiguration);
         setTests(existingTests || []);
         setLogic(existingLogic);
-        setRawResponses((prev) => {
-          const next = { ...prev };
+          setRawResponses((prev) => {
+            const next = { ...prev };
           if (!next.ontology && existingOntology?.ontology_owl) {
-            next.ontology = existingOntology.ontology_owl;
+            next.ontology = existingOntology.raw_response ?? existingOntology.ontology_owl;
           }
           if (!next.interface && existingInterface) {
             next.interface = JSON.stringify(existingInterface, null, 2);
@@ -208,7 +208,10 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
     const payload = await ontologyAPI.generate(dtlib.id, dtl.id);
     if (payload) {
       setOntology(payload);
-      setRawResponses((prev) => ({ ...prev, ontology: payload.ontology_owl }));
+      setRawResponses((prev) => ({
+        ...prev,
+        ontology: payload.raw_response ?? payload.ontology_owl,
+      }));
       return payload.ontology_owl;
     }
     return null;

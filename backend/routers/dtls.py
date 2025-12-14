@@ -134,7 +134,7 @@ def generate_ontology(db: Session = Depends(get_db), dtl: models.DTL = Depends(r
 
     db.add(dtl)
     db.commit()
-    return schemas.OntologyPayload(ontology_owl=ontology_owl)
+    return schemas.OntologyPayload(ontology_owl=ontology_owl, raw_response=raw)
 
 
 @router.get("/{dtl_id}/interface", response_model=schemas.InterfacePayload | None)

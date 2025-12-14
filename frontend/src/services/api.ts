@@ -117,6 +117,7 @@ export interface TestCase {
 
 export interface OntologyData {
   ontology_owl: string;
+  raw_response?: string | null;
 }
 
 export interface InterfaceData {
