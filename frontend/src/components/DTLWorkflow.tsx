@@ -24,6 +24,77 @@ type Props = {
   onUpdateDTL: (id: string, updates: Partial<DTL>) => void;
 };
 
+function useGenerationProgress(isActive: boolean) {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!isActive) {
+      setProgress((prev) => (prev > 0 && prev < 100 ? 100 : prev));
+      return;
+    }
+
+    setElapsedSeconds(0);
+    setProgress(2);
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      setElapsedSeconds(Number(elapsed.toFixed(1)));
+      const nextProgress = Math.min(90, elapsed * 7.5);
+      setProgress(Number(nextProgress.toFixed(1)));
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  useEffect(() => {
+    if (!isActive && progress === 100) {
+      const reset = setTimeout(() => setElapsedSeconds(0), 1500);
+      return () => clearTimeout(reset);
+    }
+  }, [isActive, progress]);
+
+  return { progress: Math.min(progress, 100), elapsedSeconds };
+}
+
+function GenerationProgressBar({
+  label,
+  progress,
+  elapsedSeconds,
+}: {
+  label: string;
+  progress: number;
+  elapsedSeconds: number;
+}) {
+  return (
+    <div className="flex items-center gap-3 text-sm text-slate-600">
+      <Clock className="size-4 text-indigo-500" />
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-medium text-slate-700">{label}</span>
+          <span className="text-xs text-slate-500">{elapsedSeconds.toFixed(1)}s</span>
+        </div>
+        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 transition-[width] duration-200"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RawResponsePanel({ label, content }: { label: string; content?: string }) {
+  if (!content) return null;
+  return (
+    <div className="mt-4 bg-slate-50 border border-dashed border-slate-300 rounded-lg p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">{label}</p>
+      <pre className="text-xs text-slate-800 whitespace-pre-wrap break-words max-h-64 overflow-auto">{content}</pre>
+    </div>
+  );
+}
+
 export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
   const [currentStage, setCurrentStage] = useState<Stage>(0);
   const ownerLabel = dtl.ownerUserId ? `User #${dtl.ownerUserId}` : 'Unassigned';
@@ -32,10 +103,14 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
   const [configuration, setConfiguration] = useState<ConfigurationData | null>(null);
   const [tests, setTests] = useState<TestCase[]>([]);
   const [logic, setLogic] = useState<LogicData | null>(null);
-  const [rawResponses, setRawResponses] = useState<Record<string, string>>({});
+  const [rawResponses, setRawResponses] = useState<Record<string, string>>(() => {
+    const stored = localStorage.getItem(`llm-responses-${dtl.id}`);
+    return stored ? (JSON.parse(stored) as Record<string, string>) : {};
+  });
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(false);
   const [artifactError, setArtifactError] = useState<string | null>(null);
+  const bulkProgress = useGenerationProgress(isGeneratingAll);
 
   const stages = [
     { id: 0 as Stage, name: 'Metadata', icon: FileText, color: 'blue' },
@@ -65,6 +140,25 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
         setConfiguration(existingConfiguration);
         setTests(existingTests || []);
         setLogic(existingLogic);
+        setRawResponses((prev) => {
+          const next = { ...prev };
+          if (!next.ontology && existingOntology?.ontology_owl) {
+            next.ontology = existingOntology.ontology_owl;
+          }
+          if (!next.interface && existingInterface) {
+            next.interface = JSON.stringify(existingInterface, null, 2);
+          }
+          if (!next.configuration && existingConfiguration?.configuration_owl) {
+            next.configuration = existingConfiguration.configuration_owl;
+          }
+          if (!next.tests && existingTests?.length) {
+            next.tests = JSON.stringify(existingTests, null, 2);
+          }
+          if (!next.logic && existingLogic?.code) {
+            next.logic = existingLogic.code;
+          }
+          return next;
+        });
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load artifacts';
         setArtifactError(message);
@@ -75,6 +169,10 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
 
     fetchArtifacts();
   }, [dtl.id, dtl.dtlibId, dtlib.id]);
+
+  useEffect(() => {
+    localStorage.setItem(`llm-responses-${dtl.id}`, JSON.stringify(rawResponses));
+  }, [dtl.id, rawResponses]);
 
   const handleGenerateAll = async () => {
     setIsGeneratingAll(true);
@@ -265,6 +363,15 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
               </button>
             </div>
           </div>
+          {isGeneratingAll && (
+            <div className="pt-2">
+              <GenerationProgressBar
+                label="Gesamte Artefakt-Generierung"
+                progress={bulkProgress.progress}
+                elapsedSeconds={bulkProgress.elapsedSeconds}
+              />
+            </div>
+          )}
           <div className="flex items-center gap-2">
             {stages.map((stage, idx) => {
               const Icon = stage.icon;
@@ -575,6 +682,7 @@ function OntologyStage({
   const [isEditing, setIsEditing] = useState(false);
   const [owlContent, setOwlContent] = useState(ontology?.ontology_owl || '');
   const [isGenerating, setIsGenerating] = useState(false);
+  const progress = useGenerationProgress(isGenerating);
 
   useEffect(() => {
     setOwlContent(ontology?.ontology_owl || '');
@@ -621,6 +729,15 @@ function OntologyStage({
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 p-6">
+        {isGenerating && (
+          <div className="mb-4">
+            <GenerationProgressBar
+              label="Processing ontology response"
+              progress={progress.progress}
+              elapsedSeconds={progress.elapsedSeconds}
+            />
+          </div>
+        )}
         {!ontology?.ontology_owl && !owlContent ? (
           <div className="text-center py-12">
             <Network className="size-12 text-purple-300 mx-auto mb-4" />
@@ -667,6 +784,7 @@ function OntologyStage({
                 <strong>Traceability:</strong> This ontology is derived from {dtl.legalReference} and defines the semantic concepts used in the DTL interface and logic.
               </p>
             </div>
+            <RawResponsePanel label="LLM Antwort" content={rawResponse} />
           </div>
         )}
       </div>
@@ -700,6 +818,7 @@ function InterfaceStage({
   );
   const [mcpSpec, setMcpSpec] = useState(interfaceSpec?.mcp_spec ? JSON.stringify(interfaceSpec.mcp_spec, null, 2) : '');
   const [isGenerating, setIsGenerating] = useState(false);
+  const progress = useGenerationProgress(isGenerating);
 
   useEffect(() => {
     if (interfaceSpec) {
@@ -771,6 +890,15 @@ function InterfaceStage({
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200">
+        {isGenerating && (
+          <div className="px-6 pt-6">
+            <GenerationProgressBar
+              label="Processing interface response"
+              progress={progress.progress}
+              elapsedSeconds={progress.elapsedSeconds}
+            />
+          </div>
+        )}
         {!interfaceSpec && !apiSpec ? (
           <div className="p-6 text-center py-12">
             <Code className="size-12 text-cyan-300 mx-auto mb-4" />
@@ -845,6 +973,7 @@ function InterfaceStage({
           </>
         )}
       </div>
+      <RawResponsePanel label="LLM Antwort" content={rawResponse} />
     </div>
   );
 }
@@ -867,6 +996,7 @@ function ConfigurationStage({
   const [isEditing, setIsEditing] = useState(false);
   const [configOwl, setConfigOwl] = useState(configuration?.configuration_owl || '');
   const [isGenerating, setIsGenerating] = useState(false);
+  const progress = useGenerationProgress(isGenerating);
 
   useEffect(() => {
     setConfigOwl(configuration?.configuration_owl || '');
@@ -913,6 +1043,15 @@ function ConfigurationStage({
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 p-6">
+        {isGenerating && (
+          <div className="mb-4">
+            <GenerationProgressBar
+              label="Processing configuration response"
+              progress={progress.progress}
+              elapsedSeconds={progress.elapsedSeconds}
+            />
+          </div>
+        )}
         {!configuration?.configuration_owl && !configOwl ? (
           <div className="text-center py-12">
             <Settings className="size-12 text-orange-300 mx-auto mb-4" />
@@ -959,6 +1098,7 @@ function ConfigurationStage({
                 <strong>Note:</strong> Configuration parameters are maintained separately from logic to support future legal amendments without code changes.
               </p>
             </div>
+            <RawResponsePanel label="LLM Antwort" content={rawResponse} />
           </div>
         )}
       </div>
@@ -980,6 +1120,7 @@ function TestsStage({
   onGenerate: () => Promise<void>;
 }) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const progress = useGenerationProgress(isGenerating);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -1007,6 +1148,15 @@ function TestsStage({
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 p-6">
+        {isGenerating && (
+          <div className="mb-4">
+            <GenerationProgressBar
+              label="Processing test scenarios"
+              progress={progress.progress}
+              elapsedSeconds={progress.elapsedSeconds}
+            />
+          </div>
+        )}
         {tests.length === 0 ? (
           <div className="text-center py-12">
             <TestTube className="size-12 text-pink-300 mx-auto mb-4" />
@@ -1049,13 +1199,7 @@ function TestsStage({
           </div>
         )}
       </div>
-
-      {rawResponse && (
-        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
-          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
-        </div>
-      )}
+      <RawResponsePanel label="LLM Antwort" content={rawResponse} />
     </div>
   );
 }
@@ -1078,6 +1222,7 @@ function LogicStage({
   const [isEditing, setIsEditing] = useState(false);
   const [logicContent, setLogicContent] = useState(logic?.code || '');
   const [isGenerating, setIsGenerating] = useState(false);
+  const progress = useGenerationProgress(isGenerating);
 
   useEffect(() => {
     setLogicContent(logic?.code || '');
@@ -1119,6 +1264,15 @@ function LogicStage({
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 p-6">
+        {isGenerating && (
+          <div className="mb-4">
+            <GenerationProgressBar
+              label="Processing logic response"
+              progress={progress.progress}
+              elapsedSeconds={progress.elapsedSeconds}
+            />
+          </div>
+        )}
         {!logicContent && !logic ? (
           <div className="text-center py-12">
             <Cpu className="size-12 text-indigo-300 mx-auto mb-4" />
@@ -1172,12 +1326,7 @@ function LogicStage({
         )}
       </div>
 
-      {rawResponse && (
-        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
-          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
-        </div>
-      )}
+      <RawResponsePanel label="LLM Antwort" content={rawResponse} />
     </div>
   );
 }
