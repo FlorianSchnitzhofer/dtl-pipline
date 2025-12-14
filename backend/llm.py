@@ -37,7 +37,13 @@ class LLMService:
             return completion.choices[0].message.content or ""
         except Exception as exc:
             logger.warning(
-                "LLM generation failed; returning stubbed response. Error: %s", exc
+                "LLM generation failed for deployment '%s' at '%s'. Prompt preview: %r. "
+                "Returning stubbed response. Error: %s",
+                self.deployment,
+                self.endpoint,
+                prompt[:120],
+                exc,
+                exc_info=True,
             )
             return f"[stubbed LLM response for prompt: {prompt[:120]}...]"
 
