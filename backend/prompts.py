@@ -44,8 +44,9 @@ ONTOLOGY_PROMPT = PromptTemplate(
     description="OWL extraction for a DTL",
     template=(
         "You are an expert knowledge engineer creating OWL ontologies for Digital Twin Laws (DTLs).\n"
-        "Return a single JSON object with the key `ontology_owl` that contains the full OWL snippet as a string.\n"
-        "Include classes, properties and clear labels that map to the provided reference.\n"
+        "Translate the legal text into exactly one OWL file representing the ontology only—no logic or rules—and return it as strict JSON with no prose.\n"
+        "Respond with: {\"ontology_owl\": \"<consistent, error-free OWL with only semantic definitions of key parameters and terms>\"}.\n"
+        "Keep IRIs stable, add rdfs:label for readability, and align the ontology to the provided reference.\n"
         "Title: {title}\n"
         "Reference: {reference}\n"
         "Relevant legal text:\n{legal_text}"
@@ -97,9 +98,10 @@ TEST_PROMPT = PromptTemplate(
 LOGIC_PROMPT = PromptTemplate(
     description="Generate executable pseudo code",
     template=(
-        "Write runnable python code for the logic layer of a Digital Twin Law.\n"
-        "Return a JSON object with keys `language` (string) and `code` (string).\n"
-        "Prepend the code with inline comments explaining the legal reasoning.\n"
+        "Translate the legal text into executable programming logic.\n"
+        "Return a JSON object with keys `language` (string, always 'Python') and `code` (string).\n"
+        "The code must be valid Python, start with comments summarising the legal reasoning, and implement the logic described.\n"
+        "Do not include any extra keys or prose outside the JSON object.\n"
         "DTL Title: {title}\n"
         "Context:\n{legal_text}"
     ),
