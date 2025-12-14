@@ -1,6 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, FileText, Network, Code, Settings, TestTube, Cpu, CheckCircle, BookOpen, ExternalLink, Sparkles, Check, AlertCircle, Clock } from 'lucide-react';
 import type { DTLib, DTL } from '../App';
+import {
+  configurationAPI,
+  interfaceAPI,
+  logicAPI,
+  ontologyAPI,
+  testsAPI,
+  type ConfigurationData,
+  type InterfaceData,
+  type LogicData,
+  type OntologyData,
+  type TestCase,
+  dtlAPI,
+} from '../services/api';
 
 type Stage = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -14,6 +27,15 @@ type Props = {
 export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
   const [currentStage, setCurrentStage] = useState<Stage>(0);
   const ownerLabel = dtl.ownerUserId ? `User #${dtl.ownerUserId}` : 'Unassigned';
+  const [ontology, setOntology] = useState<OntologyData | null>(null);
+  const [interfaceSpec, setInterfaceSpec] = useState<InterfaceData | null>(null);
+  const [configuration, setConfiguration] = useState<ConfigurationData | null>(null);
+  const [tests, setTests] = useState<TestCase[]>([]);
+  const [logic, setLogic] = useState<LogicData | null>(null);
+  const [rawResponses, setRawResponses] = useState<Record<string, string>>({});
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(false);
+  const [artifactError, setArtifactError] = useState<string | null>(null);
 
   const stages = [
     { id: 0 as Stage, name: 'Metadata', icon: FileText, color: 'blue' },
@@ -24,6 +46,121 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
     { id: 5 as Stage, name: 'Logic', icon: Cpu, color: 'indigo' },
     { id: 6 as Stage, name: 'Review', icon: CheckCircle, color: 'emerald' }
   ];
+
+  useEffect(() => {
+    const fetchArtifacts = async () => {
+      setIsLoadingArtifacts(true);
+      setArtifactError(null);
+      try {
+        const [existingOntology, existingInterface, existingConfiguration, existingTests, existingLogic] = await Promise.all([
+          ontologyAPI.get(dtlib.id, dtl.id),
+          interfaceAPI.get(dtlib.id, dtl.id),
+          configurationAPI.get(dtlib.id, dtl.id),
+          testsAPI.list(dtlib.id, dtl.id),
+          logicAPI.get(dtlib.id, dtl.id),
+        ]);
+
+        setOntology(existingOntology);
+        setInterfaceSpec(existingInterface);
+        setConfiguration(existingConfiguration);
+        setTests(existingTests || []);
+        setLogic(existingLogic);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load artifacts';
+        setArtifactError(message);
+      } finally {
+        setIsLoadingArtifacts(false);
+      }
+    };
+
+    fetchArtifacts();
+  }, [dtl.id, dtl.dtlibId, dtlib.id]);
+
+  const handleGenerateAll = async () => {
+    setIsGeneratingAll(true);
+    setArtifactError(null);
+    try {
+      const result = await dtlAPI.generateAll(dtlib.id, dtl.id);
+      setOntology(result.ontology);
+      setInterfaceSpec(result.interface);
+      setConfiguration(result.configuration);
+      setTests(result.tests || []);
+      setLogic(result.logic);
+      setRawResponses({
+        ontology: result.ontology_raw,
+        interface: result.interface_raw,
+        configuration: result.configuration_raw,
+        tests: result.tests_raw,
+        logic: result.logic_raw,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to generate artifacts';
+      setArtifactError(message);
+    } finally {
+      setIsGeneratingAll(false);
+    }
+  };
+
+  const handleSaveOntology = async (ontologyOwl: string) => {
+    const payload = await ontologyAPI.save(dtlib.id, dtl.id, { ontology_owl: ontologyOwl });
+    setOntology(payload);
+  };
+
+  const handleGenerateOntology = async () => {
+    const payload = await ontologyAPI.generate(dtlib.id, dtl.id);
+    if (payload) {
+      setOntology(payload);
+      setRawResponses((prev) => ({ ...prev, ontology: payload.ontology_owl }));
+    }
+  };
+
+  const handleSaveInterface = async (data: InterfaceData) => {
+    const payload = await interfaceAPI.save(dtlib.id, dtl.id, data);
+    setInterfaceSpec(payload);
+  };
+
+  const handleGenerateInterface = async () => {
+    const payload = await interfaceAPI.generate(dtlib.id, dtl.id);
+    if (payload) {
+      setInterfaceSpec(payload);
+      setRawResponses((prev) => ({ ...prev, interface: JSON.stringify(payload, null, 2) }));
+    }
+  };
+
+  const handleSaveConfiguration = async (configurationOwl: string) => {
+    const payload = await configurationAPI.save(dtlib.id, dtl.id, { configuration_owl: configurationOwl });
+    setConfiguration(payload);
+  };
+
+  const handleGenerateConfiguration = async () => {
+    const payload = await configurationAPI.generate(dtlib.id, dtl.id);
+    if (payload) {
+      setConfiguration(payload);
+      setRawResponses((prev) => ({ ...prev, configuration: payload.configuration_owl }));
+    }
+  };
+
+  const handleGenerateTests = async () => {
+    const payload = await testsAPI.generate(dtlib.id, dtl.id);
+    if (payload) {
+      setTests(payload);
+      setRawResponses((prev) => ({ ...prev, tests: JSON.stringify(payload, null, 2) }));
+    }
+  };
+
+  const handleGenerateLogic = async () => {
+    const payload = await logicAPI.generate(dtlib.id, dtl.id);
+    if (payload) {
+      setLogic(payload);
+      setRawResponses((prev) => ({ ...prev, logic: payload.code }));
+    }
+  };
+
+  const handleSaveLogic = async (code: string, language?: string) => {
+    const payload = await logicAPI.save(dtlib.id, dtl.id, { code, language: language || 'Python' });
+    setLogic({ code, language: language || 'Python' });
+    return payload;
+  };
 
   const getStageColor = (color: string, variant: 'bg' | 'text' | 'border' | 'hover') => {
     const colors = {
@@ -105,8 +242,29 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Stage Navigation */}
-        <div className="bg-white border-b border-slate-200 px-8 py-6">
-          <h1 className="text-slate-900 mb-6">DTL Workflow</h1>
+        <div className="bg-white border-b border-slate-200 px-8 py-6 space-y-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-slate-900 mb-1">DTL Workflow</h1>
+              <p className="text-sm text-slate-600">Generate ontology, interfaces, configuration, tests, and logic directly from the legal text.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {artifactError && (
+                <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+                  <AlertCircle className="size-4" />
+                  <span className="text-sm">{artifactError}</span>
+                </div>
+              )}
+              <button
+                onClick={handleGenerateAll}
+                disabled={isGeneratingAll || isLoadingArtifacts}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              >
+                <Sparkles className="size-4" />
+                {isGeneratingAll ? 'Generating with AI...' : 'Generate All Artifacts'}
+              </button>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             {stages.map((stage, idx) => {
               const Icon = stage.icon;
@@ -144,12 +302,70 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
         {/* Stage Content */}
         <div className="flex-1 overflow-y-auto p-8">
           {currentStage === 0 && <MetadataStage dtl={dtl} onUpdate={onUpdateDTL} />}
-          {currentStage === 1 && <OntologyStage dtl={dtl} onUpdate={onUpdateDTL} />}
-          {currentStage === 2 && <InterfaceStage dtl={dtl} onUpdate={onUpdateDTL} />}
-          {currentStage === 3 && <ConfigurationStage dtl={dtl} onUpdate={onUpdateDTL} />}
-          {currentStage === 4 && <TestsStage dtl={dtl} onUpdate={onUpdateDTL} />}
-          {currentStage === 5 && <LogicStage dtl={dtl} onUpdate={onUpdateDTL} />}
-          {currentStage === 6 && <ReviewStage dtl={dtl} onUpdate={onUpdateDTL} />}
+          {currentStage === 1 && (
+            <OntologyStage
+              dtl={dtl}
+              ontology={ontology}
+              rawResponse={rawResponses.ontology}
+              isLoading={isLoadingArtifacts}
+              onGenerate={handleGenerateOntology}
+              onSave={handleSaveOntology}
+            />
+          )}
+          {currentStage === 2 && (
+            <InterfaceStage
+              dtl={dtl}
+              interfaceSpec={interfaceSpec}
+              rawResponse={rawResponses.interface}
+              isLoading={isLoadingArtifacts}
+              onGenerate={handleGenerateInterface}
+              onSave={handleSaveInterface}
+            />
+          )}
+          {currentStage === 3 && (
+            <ConfigurationStage
+              dtl={dtl}
+              configuration={configuration}
+              rawResponse={rawResponses.configuration}
+              isLoading={isLoadingArtifacts}
+              onGenerate={handleGenerateConfiguration}
+              onSave={handleSaveConfiguration}
+            />
+          )}
+          {currentStage === 4 && (
+            <TestsStage
+              dtl={dtl}
+              tests={tests}
+              rawResponse={rawResponses.tests}
+              isLoading={isLoadingArtifacts}
+              onGenerate={handleGenerateTests}
+            />
+          )}
+          {currentStage === 5 && (
+            <LogicStage
+              dtl={dtl}
+              logic={logic}
+              rawResponse={rawResponses.logic}
+              isLoading={isLoadingArtifacts}
+              onGenerate={handleGenerateLogic}
+              onSave={handleSaveLogic}
+            />
+          )}
+          {currentStage === 6 && (
+            <ReviewStage
+              dtl={dtl}
+              onUpdate={onUpdateDTL}
+              artifacts={{
+                ontology: !!ontology?.ontology_owl,
+                interface: !!interfaceSpec,
+                configuration: !!configuration?.configuration_owl,
+                tests: tests.length > 0,
+                logic: !!logic?.code,
+              }}
+              rawResponses={rawResponses}
+              tests={tests}
+            />
+          )}
         </div>
 
         {/* Navigation Footer */}
@@ -341,34 +557,37 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
   );
 }
 
-function OntologyStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updates: Partial<DTL>) => void }) {
+function OntologyStage({
+  dtl,
+  ontology,
+  rawResponse,
+  isLoading: _isLoading,
+  onGenerate,
+  onSave,
+}: {
+  dtl: DTL;
+  ontology: OntologyData | null;
+  rawResponse?: string;
+  isLoading: boolean;
+  onGenerate: () => Promise<void>;
+  onSave: (value: string) => Promise<void>;
+}) {
   const [isEditing, setIsEditing] = useState(false);
-  const [owlContent, setOwlContent] = useState(dtl.ontologyOwl || '');
+  const [owlContent, setOwlContent] = useState(ontology?.ontology_owl || '');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerate = () => {
+  useEffect(() => {
+    setOwlContent(ontology?.ontology_owl || '');
+  }, [ontology?.ontology_owl, dtl.id]);
+
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      const generated = `<?xml version="1.0"?>
-<rdf:RDF xmlns="http://www.legislation.gov/ontology/${dtl.id}#"
-     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-     xmlns:owl="http://www.w3.org/2002/07/owl#"
-     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
-    
-    <!-- Generated from legal text -->
-    <owl:Class rdf:about="#LegalEntity">
-        <rdfs:label>Legal Entity</rdfs:label>
-        <rdfs:comment>Base class for entities referenced in legislation</rdfs:comment>
-    </owl:Class>
-    
-</rdf:RDF>`;
-      setOwlContent(generated);
-      setIsGenerating(false);
-    }, 2000);
+    await onGenerate();
+    setIsGenerating(false);
   };
 
-  const handleSave = () => {
-    onUpdate(dtl.id, { ontologyOwl: owlContent });
+  const handleSave = async () => {
+    await onSave(owlContent);
     setIsEditing(false);
   };
 
@@ -380,7 +599,7 @@ function OntologyStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
           <p className="text-slate-600">Define the semantic model and concepts for this DTL</p>
         </div>
         <div className="flex items-center gap-3">
-          {!dtl.ontologyOwl && !owlContent && (
+          {!ontology?.ontology_owl && !owlContent && (
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
@@ -390,7 +609,7 @@ function OntologyStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
               {isGenerating ? 'Generating...' : 'Generate from Law'}
             </button>
           )}
-          {!isEditing && (dtl.ontologyOwl || owlContent) && (
+          {!isEditing && (ontology?.ontology_owl || owlContent) && (
             <button
               onClick={() => setIsEditing(true)}
               className="px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
@@ -402,7 +621,7 @@ function OntologyStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 p-6">
-        {!dtl.ontologyOwl && !owlContent ? (
+        {!ontology?.ontology_owl && !owlContent ? (
           <div className="text-center py-12">
             <Network className="size-12 text-purple-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No ontology defined yet</h3>
@@ -422,7 +641,7 @@ function OntologyStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
               <button
                 onClick={() => {
                   setIsEditing(false);
-                  setOwlContent(dtl.ontologyOwl || '');
+                  setOwlContent(ontology?.ontology_owl || '');
                 }}
                 className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               >
@@ -440,7 +659,7 @@ function OntologyStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
           <div>
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
               <pre className="text-xs text-slate-800 overflow-x-auto">
-                {dtl.ontologyOwl || owlContent}
+                {ontology?.ontology_owl || owlContent}
               </pre>
             </div>
             <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
@@ -455,56 +674,71 @@ function OntologyStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
   );
 }
 
-function InterfaceStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updates: Partial<DTL>) => void }) {
+function InterfaceStage({
+  dtl,
+  interfaceSpec,
+  rawResponse,
+  isLoading: _isLoading,
+  onGenerate,
+  onSave,
+}: {
+  dtl: DTL;
+  interfaceSpec: InterfaceData | null;
+  rawResponse?: string;
+  isLoading: boolean;
+  onGenerate: () => Promise<void>;
+  onSave: (data: InterfaceData) => Promise<void>;
+}) {
   const [activeTab, setActiveTab] = useState<'api' | 'mcp'>('api');
   const [isEditing, setIsEditing] = useState(false);
-  const [apiSpec, setApiSpec] = useState(dtl.apiSpec || '');
-  const [mcpSpec, setMcpSpec] = useState(dtl.mcpSpec || '');
+  const [apiSpec, setApiSpec] = useState(
+    interfaceSpec ? JSON.stringify({
+      function_name: interfaceSpec.function_name,
+      inputs: interfaceSpec.inputs,
+      outputs: interfaceSpec.outputs,
+    }, null, 2) : ''
+  );
+  const [mcpSpec, setMcpSpec] = useState(interfaceSpec?.mcp_spec ? JSON.stringify(interfaceSpec.mcp_spec, null, 2) : '');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      const generatedApi = `{
-  "openapi": "3.0.0",
-  "info": {
-    "title": "${dtl.name} API",
-    "version": "${dtl.version}"
-  },
-  "paths": {
-    "/execute": {
-      "post": {
-        "summary": "${dtl.description}",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
-            }
-          }
-        }
-      }
+  useEffect(() => {
+    if (interfaceSpec) {
+      setApiSpec(
+        JSON.stringify(
+          {
+            function_name: interfaceSpec.function_name,
+            inputs: interfaceSpec.inputs,
+            outputs: interfaceSpec.outputs,
+          },
+          null,
+          2,
+        ),
+      );
+      setMcpSpec(interfaceSpec.mcp_spec ? JSON.stringify(interfaceSpec.mcp_spec, null, 2) : '');
     }
-  }
-}`;
-      const generatedMcp = `{
-  "name": "${dtl.id}",
-  "description": "${dtl.description}",
-  "inputSchema": {
-    "type": "object",
-    "properties": {}
-  }
-}`;
-      setApiSpec(generatedApi);
-      setMcpSpec(generatedMcp);
-      setIsGenerating(false);
-    }, 2000);
+  }, [interfaceSpec, dtl.id]);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    await onGenerate();
+    setIsGenerating(false);
   };
 
-  const handleSave = () => {
-    onUpdate(dtl.id, { apiSpec, mcpSpec });
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const parsedApi = JSON.parse(apiSpec || '{}');
+      const payload: InterfaceData = {
+        function_name: parsedApi.function_name || dtl.name,
+        inputs: parsedApi.inputs || [],
+        outputs: parsedApi.outputs || [],
+        mcp_spec: mcpSpec ? JSON.parse(mcpSpec) : undefined,
+      };
+      await onSave(payload);
+      setIsEditing(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to save interface';
+      alert(message);
+    }
   };
 
   return (
@@ -515,7 +749,7 @@ function InterfaceStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, up
           <p className="text-slate-600">Define API and MCP interfaces for external integration</p>
         </div>
         <div className="flex items-center gap-3">
-          {!dtl.apiSpec && !apiSpec && (
+          {!interfaceSpec && !apiSpec && (
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
@@ -525,7 +759,7 @@ function InterfaceStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, up
               {isGenerating ? 'Generating...' : 'Generate Specs'}
             </button>
           )}
-          {!isEditing && (dtl.apiSpec || apiSpec) && (
+          {!isEditing && (interfaceSpec || apiSpec) && (
             <button
               onClick={() => setIsEditing(true)}
               className="px-4 py-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors"
@@ -537,7 +771,7 @@ function InterfaceStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, up
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200">
-        {!dtl.apiSpec && !apiSpec ? (
+        {!interfaceSpec && !apiSpec ? (
           <div className="p-6 text-center py-12">
             <Code className="size-12 text-cyan-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No interfaces defined yet</h3>
@@ -583,10 +817,10 @@ function InterfaceStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, up
                     <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
                       <button
                         onClick={() => {
-                          setIsEditing(false);
-                          setApiSpec(dtl.apiSpec || '');
-                          setMcpSpec(dtl.mcpSpec || '');
-                        }}
+                  setIsEditing(false);
+                  setApiSpec(interfaceSpec ? JSON.stringify(interfaceSpec, null, 2) : '');
+                  setMcpSpec(interfaceSpec?.mcp_spec ? JSON.stringify(interfaceSpec.mcp_spec, null, 2) : '');
+                }}
                         className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                       >
                         Cancel
@@ -603,7 +837,7 @@ function InterfaceStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, up
               ) : (
                 <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                   <pre className="text-xs text-slate-800 overflow-x-auto">
-                    {activeTab === 'api' ? (dtl.apiSpec || apiSpec) : (dtl.mcpSpec || mcpSpec)}
+                    {activeTab === 'api' ? apiSpec : mcpSpec}
                   </pre>
                 </div>
               )}
@@ -615,30 +849,37 @@ function InterfaceStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, up
   );
 }
 
-function ConfigurationStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updates: Partial<DTL>) => void }) {
+function ConfigurationStage({
+  dtl,
+  configuration,
+  rawResponse,
+  isLoading: _isLoading,
+  onGenerate,
+  onSave,
+}: {
+  dtl: DTL;
+  configuration: ConfigurationData | null;
+  rawResponse?: string;
+  isLoading: boolean;
+  onGenerate: () => Promise<void>;
+  onSave: (value: string) => Promise<void>;
+}) {
   const [isEditing, setIsEditing] = useState(false);
-  const [configOwl, setConfigOwl] = useState(dtl.configurationOwl || '');
+  const [configOwl, setConfigOwl] = useState(configuration?.configuration_owl || '');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerate = () => {
+  useEffect(() => {
+    setConfigOwl(configuration?.configuration_owl || '');
+  }, [configuration?.configuration_owl, dtl.id]);
+
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      const generated = `<?xml version="1.0"?>
-<rdf:RDF xmlns="http://www.legislation.gov/config/${dtl.id}#"
-     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-    
-    <Configuration rdf:about="#${dtl.id}Config">
-        <!-- Extracted from ${dtl.legalReference} -->
-    </Configuration>
-    
-</rdf:RDF>`;
-      setConfigOwl(generated);
-      setIsGenerating(false);
-    }, 2000);
+    await onGenerate();
+    setIsGenerating(false);
   };
 
-  const handleSave = () => {
-    onUpdate(dtl.id, { configurationOwl: configOwl });
+  const handleSave = async () => {
+    await onSave(configOwl);
     setIsEditing(false);
   };
 
@@ -650,7 +891,7 @@ function ConfigurationStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string
           <p className="text-slate-600">Define rates, thresholds, and time periods from the statute</p>
         </div>
         <div className="flex items-center gap-3">
-          {!dtl.configurationOwl && !configOwl && (
+          {!configuration?.configuration_owl && !configOwl && (
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
@@ -660,7 +901,7 @@ function ConfigurationStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string
               {isGenerating ? 'Extracting...' : 'Extract from Law'}
             </button>
           )}
-          {!isEditing && (dtl.configurationOwl || configOwl) && (
+          {!isEditing && (configuration?.configuration_owl || configOwl) && (
             <button
               onClick={() => setIsEditing(true)}
               className="px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
@@ -672,7 +913,7 @@ function ConfigurationStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 p-6">
-        {!dtl.configurationOwl && !configOwl ? (
+        {!configuration?.configuration_owl && !configOwl ? (
           <div className="text-center py-12">
             <Settings className="size-12 text-orange-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No configuration defined yet</h3>
@@ -692,7 +933,7 @@ function ConfigurationStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string
               <button
                 onClick={() => {
                   setIsEditing(false);
-                  setConfigOwl(dtl.configurationOwl || '');
+                  setConfigOwl(configuration?.configuration_owl || '');
                 }}
                 className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               >
@@ -710,7 +951,7 @@ function ConfigurationStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string
           <div>
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
               <pre className="text-xs text-slate-800 overflow-x-auto">
-                {dtl.configurationOwl || configOwl}
+                {configuration?.configuration_owl || configOwl}
               </pre>
             </div>
             <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
@@ -725,32 +966,25 @@ function ConfigurationStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string
   );
 }
 
-function TestsStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updates: Partial<DTL>) => void }) {
-  const [tests, setTests] = useState(dtl.tests || []);
+function TestsStage({
+  dtl,
+  tests,
+  rawResponse,
+  isLoading: _isLoading,
+  onGenerate,
+}: {
+  dtl: DTL;
+  tests: TestCase[];
+  rawResponse?: string;
+  isLoading: boolean;
+  onGenerate: () => Promise<void>;
+}) {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      const generated = [
-        { id: 't1', name: 'Standard case', description: 'Test with typical input values', status: 'pending' as const },
-        { id: 't2', name: 'Boundary condition', description: 'Test at threshold limits', status: 'pending' as const },
-        { id: 't3', name: 'Error handling', description: 'Test with invalid input', status: 'pending' as const }
-      ];
-      setTests(generated);
-      onUpdate(dtl.id, { tests: generated });
-      setIsGenerating(false);
-    }, 2000);
-  };
-
-  const handleToggleStatus = (testId: string) => {
-    const updated = tests.map(t => 
-      t.id === testId 
-        ? { ...t, status: (t.status === 'passed' ? 'pending' : 'passed') as const }
-        : t
-    );
-    setTests(updated);
-    onUpdate(dtl.id, { tests: updated });
+    await onGenerate();
+    setIsGenerating(false);
   };
 
   return (
@@ -793,72 +1027,66 @@ function TestsStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, update
                     <div className="flex items-center gap-3 mb-2">
                       <h4 className="text-slate-900">{test.name}</h4>
                       <span className={`px-3 py-1 rounded-full text-sm ${
-                        test.status === 'passed'
+                        test.last_result === 'passed'
                           ? 'bg-emerald-100 text-emerald-700'
-                          : test.status === 'failed'
+                          : test.last_result === 'failed'
                           ? 'bg-red-100 text-red-700'
                           : 'bg-amber-100 text-amber-700'
                       }`}>
-                        {test.status === 'passed' ? 'Passed' : test.status === 'failed' ? 'Failed' : 'Pending'}
+                        {test.last_result === 'passed'
+                          ? 'Passed'
+                          : test.last_result === 'failed'
+                          ? 'Failed'
+                          : 'Pending'}
                       </span>
                     </div>
                     <p className="text-slate-600 text-sm">{test.description}</p>
+                    <p className="text-slate-500 text-xs">Expected: {JSON.stringify(test.expected_output)}</p>
                   </div>
-                  <button
-                    onClick={() => handleToggleStatus(test.id)}
-                    className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm"
-                  >
-                    {test.status === 'passed' ? 'Reset' : 'Run Test'}
-                  </button>
                 </div>
               </div>
             ))}
-
-            <div className="pt-4 border-t border-slate-200">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600">
-                  {tests.filter(t => t.status === 'passed').length} of {tests.length} tests passed
-                </span>
-                <button className="text-pink-600 hover:text-pink-700">
-                  Add Custom Test
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </div>
+
+      {rawResponse && (
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
+          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
+        </div>
+      )}
     </div>
   );
 }
 
-function LogicStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updates: Partial<DTL>) => void }) {
+function LogicStage({
+  dtl,
+  logic,
+  rawResponse,
+  isLoading: _isLoading,
+  onGenerate,
+  onSave,
+}: {
+  dtl: DTL;
+  logic: LogicData | null;
+  rawResponse?: string;
+  isLoading: boolean;
+  onGenerate: () => Promise<void>;
+  onSave: (code: string, language?: string) => Promise<void>;
+}) {
   const [isEditing, setIsEditing] = useState(false);
-  const [logic, setLogic] = useState(dtl.logic || '');
+  const [logicContent, setLogicContent] = useState(logic?.code || '');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerate = () => {
+  useEffect(() => {
+    setLogicContent(logic?.code || '');
+  }, [logic?.code, dtl.id]);
+
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      const generated = `// ${dtl.name}
-// Legal Reference: ${dtl.legalReference}
-
-function execute(input) {
-  // TODO: Implement logic based on statutory text
-  // Refer to configuration parameters and ontology
-  
-  return {
-    result: null,
-    legalReference: "${dtl.legalReference}"
-  };
-}`;
-      setLogic(generated);
-      setIsGenerating(false);
-    }, 2000);
-  };
-
-  const handleSave = () => {
-    onUpdate(dtl.id, { logic });
-    setIsEditing(false);
+    await onGenerate();
+    setIsGenerating(false);
   };
 
   return (
@@ -869,7 +1097,7 @@ function execute(input) {
           <p className="text-slate-600">Implement deterministic, auditable logic for the DTL</p>
         </div>
         <div className="flex items-center gap-3">
-          {!dtl.logic && !logic && (
+          {!logicContent && !logic && (
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
@@ -879,7 +1107,7 @@ function execute(input) {
               {isGenerating ? 'Drafting...' : 'Draft Logic'}
             </button>
           )}
-          {!isEditing && (dtl.logic || logic) && (
+          {!isEditing && (logicContent || logic) && (
             <button
               onClick={() => setIsEditing(true)}
               className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -891,7 +1119,7 @@ function execute(input) {
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 p-6">
-        {!dtl.logic && !logic ? (
+        {!logicContent && !logic ? (
           <div className="text-center py-12">
             <Cpu className="size-12 text-indigo-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No logic implemented yet</h3>
@@ -902,8 +1130,8 @@ function execute(input) {
         ) : isEditing ? (
           <div className="space-y-4">
             <textarea
-              value={logic}
-              onChange={(e) => setLogic(e.target.value)}
+              value={logicContent}
+              onChange={(e) => setLogicContent(e.target.value)}
               rows={20}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-slate-50"
             />
@@ -911,14 +1139,17 @@ function execute(input) {
               <button
                 onClick={() => {
                   setIsEditing(false);
-                  setLogic(dtl.logic || '');
+                  setLogicContent(logic?.code || '');
                 }}
                 className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={handleSave}
+                onClick={async () => {
+                  await onSave(logicContent, logic?.language);
+                  setIsEditing(false);
+                }}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 Save Logic
@@ -929,7 +1160,7 @@ function execute(input) {
           <div>
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
               <pre className="text-sm text-slate-800 overflow-x-auto">
-                {dtl.logic || logic}
+                {logicContent}
               </pre>
             </div>
             <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
@@ -940,21 +1171,40 @@ function execute(input) {
           </div>
         )}
       </div>
+
+      {rawResponse && (
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
+          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
+        </div>
+      )}
     </div>
   );
 }
 
-function ReviewStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updates: Partial<DTL>) => void }) {
+function ReviewStage({
+  dtl,
+  onUpdate,
+  artifacts,
+  rawResponses,
+  tests,
+}: {
+  dtl: DTL;
+  onUpdate: (id: string, updates: Partial<DTL>) => void;
+  artifacts: { ontology: boolean; interface: boolean; configuration: boolean; tests: boolean; logic: boolean };
+  rawResponses: Record<string, string>;
+  tests: TestCase[];
+}) {
   const [reviewComments, setReviewComments] = useState(dtl.reviewComments || '');
   const [showApprovalModal, setShowApprovalModal] = useState(false);
 
   const completionStatus = {
     metadata: true,
-    ontology: !!dtl.ontologyOwl,
-    interface: !!dtl.apiSpec && !!dtl.mcpSpec,
-    configuration: !!dtl.configurationOwl,
-    tests: (dtl.tests?.length || 0) > 0,
-    logic: !!dtl.logic
+    ontology: artifacts.ontology,
+    interface: artifacts.interface,
+    configuration: artifacts.configuration,
+    tests: artifacts.tests,
+    logic: artifacts.logic
   };
 
   const completionPercentage = Math.round(
@@ -1037,32 +1287,32 @@ function ReviewStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updat
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Ontology (OWL)</span>
-                <span className={dtl.ontologyOwl ? 'text-emerald-600' : 'text-amber-600'}>
-                  {dtl.ontologyOwl ? 'Defined' : 'Missing'}
+                <span className={artifacts.ontology ? 'text-emerald-600' : 'text-amber-600'}>
+                  {artifacts.ontology ? 'Defined' : 'Missing'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">API Specification</span>
-                <span className={dtl.apiSpec ? 'text-emerald-600' : 'text-amber-600'}>
-                  {dtl.apiSpec ? 'Defined' : 'Missing'}
+                <span className={artifacts.interface ? 'text-emerald-600' : 'text-amber-600'}>
+                  {artifacts.interface ? 'Defined' : 'Missing'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Configuration</span>
-                <span className={dtl.configurationOwl ? 'text-emerald-600' : 'text-amber-600'}>
-                  {dtl.configurationOwl ? 'Defined' : 'Missing'}
+                <span className={artifacts.configuration ? 'text-emerald-600' : 'text-amber-600'}>
+                  {artifacts.configuration ? 'Defined' : 'Missing'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Unit Tests</span>
-                <span className={(dtl.tests?.length || 0) > 0 ? 'text-emerald-600' : 'text-amber-600'}>
-                  {dtl.tests?.length || 0} tests
+                <span className={tests.length > 0 ? 'text-emerald-600' : 'text-amber-600'}>
+                  {tests.length} tests
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Logic</span>
-                <span className={dtl.logic ? 'text-emerald-600' : 'text-amber-600'}>
-                  {dtl.logic ? 'Implemented' : 'Missing'}
+                <span className={artifacts.logic ? 'text-emerald-600' : 'text-amber-600'}>
+                  {artifacts.logic ? 'Implemented' : 'Missing'}
                 </span>
               </div>
             </div>
@@ -1070,21 +1320,21 @@ function ReviewStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updat
         </div>
 
         {/* Test Results */}
-        {dtl.tests && dtl.tests.length > 0 && (
+        {tests && tests.length > 0 && (
           <div className="bg-white rounded-lg border border-slate-200 p-6">
             <h4 className="text-slate-900 mb-4">Test Execution Summary</h4>
             <div className="space-y-2">
-              {dtl.tests.map((test) => (
+              {tests.map((test) => (
                 <div key={test.id} className="flex items-center justify-between text-sm">
                   <span className="text-slate-700">{test.name}</span>
                   <span className={`px-3 py-1 rounded-full ${
-                    test.status === 'passed'
+                    test.last_result === 'passed'
                       ? 'bg-emerald-100 text-emerald-700'
-                      : test.status === 'failed'
+                      : test.last_result === 'failed'
                       ? 'bg-red-100 text-red-700'
                       : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {test.status}
+                    {test.last_result || 'Pending'}
                   </span>
                 </div>
               ))}
@@ -1180,6 +1430,30 @@ function ReviewStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, updat
               </button>
             </div>
           </div>
+        </div>
+        )}
+      </div>
+
+      {rawResponse && (
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
+          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
+        </div>
+        )}
+      </div>
+
+      {rawResponse && (
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
+          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
+        </div>
+        )}
+      </div>
+
+      {rawResponse && (
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
+          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
         </div>
       )}
     </div>

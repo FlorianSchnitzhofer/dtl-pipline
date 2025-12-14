@@ -164,6 +164,19 @@ class LogicPayload(BaseModel):
     code: str
 
 
+class DTLGenerationResponse(BaseModel):
+    ontology: OntologyPayload
+    ontology_raw: str
+    interface: InterfacePayload
+    interface_raw: str
+    configuration: ConfigurationPayload
+    configuration_raw: str
+    tests: List[TestCaseRead]
+    tests_raw: str
+    logic: LogicPayload
+    logic_raw: str
+
+
 class ReviewPayload(BaseModel):
     comment: Optional[str] = None
     approved_version: Optional[str] = None
