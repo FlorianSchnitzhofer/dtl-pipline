@@ -45,7 +45,8 @@ ONTOLOGY_PROMPT = PromptTemplate(
     template=(
         "You are an expert knowledge engineer creating OWL ontologies for Digital Twin Laws (DTLs).\n"
         "Translate the legal text into exactly one OWL file representing the ontology only—no logic or rules—and return it as strict JSON with no prose.\n"
-        "Respond with: {{\"ontology_owl\": \"<consistent, error-free OWL with only semantic definitions of key parameters and terms>\"}}.\n"
+        "Return a JSON object with key `ontology_owl` (string).\n"
+        "The ontology_owl must be valid, consistent, error-free OWL with only semantic definitions of key terms of the law text\n"
         "Keep IRIs stable, add rdfs:label for readability, and align the ontology to the provided reference.\n"
         "Title: {title}\n"
         "Reference: {reference}\n"
@@ -57,8 +58,9 @@ ONTOLOGY_PROMPT = PromptTemplate(
 CONFIGURATION_PROMPT = PromptTemplate(
     description="Extract numeric and threshold configuration as OWL",
     template=(
-        "You are creating an OWL configuration snippet that captures measurable parameters, thresholds and rules.\n"
-        "Respond with a JSON object: {{\"configuration_owl\": \"<OWL or RDF representation>\"}}.\n"
+        "You are creating an OWL configuration snippet that captures measurable parameters, thresholds.\n"
+        "Return a JSON object with key `configuration_owl` (string).\n"
+        "The configuration_owl must be valid, consistent, error-free OWL with only measurable parameters and thresholds\n"
         "Keep identifiers stable and include data types.\n"
         "DTL Title: {title}\n"
         "Legal text to analyze:\n{legal_text}"
