@@ -108,17 +108,17 @@ def save_ontology(
     db: Session = Depends(get_db),
     dtl: models.DTL = Depends(resolve_dtl),
 ):
+    raw_response = payload.raw_response or payload.ontology_owl
     if dtl.ontology:
         dtl.ontology.ontology_owl = payload.ontology_owl
-        if payload.raw_response is not None:
-            dtl.ontology.raw_response = payload.raw_response
+        dtl.ontology.raw_response = raw_response
     else:
         dtl.ontology = models.DTLOntology(
-            ontology_owl=payload.ontology_owl, raw_response=payload.raw_response
+            ontology_owl=payload.ontology_owl, raw_response=raw_response
         )
     db.add(dtl)
     db.commit()
-    return payload
+    return schemas.OntologyPayload(ontology_owl=payload.ontology_owl, raw_response=raw_response)
 
 
 @router.post("/{dtl_id}/ontology/generate", response_model=schemas.OntologyPayload)
