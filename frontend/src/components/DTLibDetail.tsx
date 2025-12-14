@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, FileText, Sparkles, Plus, Trash2, Edit2, CheckCircle2, Clock, AlertCircle, BookOpen, ExternalLink } from 'lucide-react';
 import type { DTLib, DTL } from '../App';
 import { dtlibAPI } from '../services/api';
+import { copyToClipboard } from '../utils/clipboard';
 
 type Tab = 'metadata' | 'lawtext' | 'dtls';
 
@@ -537,7 +538,21 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex gap-3">
               <AlertCircle className="size-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-900">{error}</p>
+              <div className="flex-1 space-y-2">
+                <p className="text-sm text-red-900">{error}</p>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="font-semibold text-red-900">Details:</span>
+                  <code className="bg-white border border-red-200 rounded px-2 py-1 text-red-900 break-words">
+                    {error}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(error)}
+                    className="px-2 py-1 bg-white border border-red-200 rounded text-red-900 hover:bg-red-50"
+                  >
+                    Copy error
+                  </button>
+                </div>
+              </div>
             </div>
           )}
           

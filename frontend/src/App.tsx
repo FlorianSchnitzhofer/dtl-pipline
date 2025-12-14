@@ -11,6 +11,7 @@ import {
   normalizeDTLStatus,
 } from './services/api';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { copyToClipboard } from './utils/clipboard';
 
 export type DTLib = {
   id: string;
@@ -286,11 +287,25 @@ export default function App() {
     <div className="min-h-screen bg-slate-50">
       {view.type === 'list' && error && (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-900">
-          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-start gap-3">
             <AlertCircle className="size-5 flex-shrink-0" />
-            <div>
-              <p className="font-medium">We couldn't load data from the backend.</p>
-              <p className="text-sm">The list below shows no items until the connection is restored.</p>
+            <div className="flex-1 space-y-2">
+              <div>
+                <p className="font-medium">We couldn't load data from the backend.</p>
+                <p className="text-sm">The list below shows no items until the connection is restored.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold">Details:</span>
+                <code className="bg-white/60 border border-amber-200 rounded px-2 py-1 text-amber-950 break-words">
+                  {error}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(error)}
+                  className="px-2 py-1 bg-white/70 border border-amber-200 rounded text-amber-900 hover:bg-white"
+                >
+                  Copy error
+                </button>
+              </div>
             </div>
             <button
               onClick={loadDTLibs}
@@ -313,9 +328,23 @@ export default function App() {
 
       {view.type === 'dtlib-detail' && dtlLoadError && (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-900">
-          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-start gap-3">
             <AlertCircle className="size-5 flex-shrink-0" />
-            <p>DTLs could not be loaded for this library: {dtlLoadError}</p>
+            <div className="flex-1 space-y-2">
+              <p>DTLs could not be loaded for this library.</p>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold">Details:</span>
+                <code className="bg-white/60 border border-amber-200 rounded px-2 py-1 text-amber-950 break-words">
+                  {dtlLoadError}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(dtlLoadError)}
+                  className="px-2 py-1 bg-white/70 border border-amber-200 rounded text-amber-900 hover:bg-white"
+                >
+                  Copy error
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
