@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+import os
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from .config import settings
@@ -47,3 +52,46 @@ app.add_middleware(
 app.include_router(users.router, prefix=settings.api_prefix)
 app.include_router(dtlibs.router, prefix=settings.api_prefix)
 app.include_router(dtls.router, prefix=settings.api_prefix)
+
+
+def mount_frontend(app: FastAPI) -> None:
+    dist_path = Path(
+        os.getenv("FRONTEND_DIST_PATH")
+        or Path(__file__).resolve().parents[1] / "frontend" / "dist"
+    )
+    index_file = dist_path / "index.html"
+
+    if not index_file.exists():
+        return
+
+    assets_dir = dist_path / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    reserved_prefixes = {
+        settings.api_prefix.lstrip("/"),
+        "docs",
+        "openapi.json",
+        "redoc",
+    }
+
+    @app.get("/", include_in_schema=False)
+    async def serve_index() -> FileResponse:
+        return FileResponse(index_file)
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str) -> FileResponse:
+        if any(
+            full_path == prefix or full_path.startswith(f"{prefix}/")
+            for prefix in reserved_prefixes
+        ):
+            raise HTTPException(status_code=404)
+
+        candidate = dist_path / full_path
+        if candidate.is_file():
+            return FileResponse(candidate)
+
+        return FileResponse(index_file)
+
+
+mount_frontend(app)
