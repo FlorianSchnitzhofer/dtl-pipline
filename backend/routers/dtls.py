@@ -116,7 +116,7 @@ def save_ontology(
 
 
 @router.post("/{dtl_id}/ontology/generate", response_model=schemas.OntologyPayload)
-def generate_ontology(dtl: models.DTL = Depends(resolve_dtl)):
+def generate_ontology(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
     prompt = prompt_builder.ontology(
         title=dtl.title,
         reference=dtl.legal_reference,
@@ -126,6 +126,14 @@ def generate_ontology(dtl: models.DTL = Depends(resolve_dtl)):
     ontology_owl = raw
     if isinstance(parsed, dict) and parsed.get("ontology_owl"):
         ontology_owl = parsed["ontology_owl"]
+
+    if dtl.ontology:
+        dtl.ontology.ontology_owl = ontology_owl
+    else:
+        dtl.ontology = models.DTLOntology(ontology_owl=ontology_owl)
+
+    db.add(dtl)
+    db.commit()
     return schemas.OntologyPayload(ontology_owl=ontology_owl)
 
 
@@ -162,7 +170,7 @@ def save_interface(
 
 
 @router.post("/{dtl_id}/interface/generate", response_model=schemas.InterfacePayload)
-def generate_interface(dtl: models.DTL = Depends(resolve_dtl)):
+def generate_interface(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
     prompt = prompt_builder.interface(title=dtl.title, legal_text=dtl.legal_text[:1500])
     raw, parsed = llm_service.generate_structured(prompt)
 
@@ -175,11 +183,31 @@ def generate_interface(dtl: models.DTL = Depends(resolve_dtl)):
     if isinstance(parsed, dict):
         interface_data.update({k: v for k, v in parsed.items() if k in {"function_name", "inputs", "outputs", "mcp_spec"}})
 
+    function_name = interface_data.get("function_name") or dtl.title
+    inputs = interface_data.get("inputs") or [{"name": "input", "description": raw[:200]}]
+    outputs = interface_data.get("outputs") or [{"name": "result", "description": raw[:200]}]
+    mcp_spec = interface_data.get("mcp_spec")
+
+    interface_json = {
+        "function_name": function_name,
+        "inputs": inputs,
+        "outputs": outputs,
+    }
+
+    if dtl.interface:
+        dtl.interface.interface_json = interface_json
+        dtl.interface.mcp_spec = mcp_spec
+    else:
+        dtl.interface = models.DTLInterface(interface_json=interface_json, mcp_spec=mcp_spec)
+
+    db.add(dtl)
+    db.commit()
+
     return schemas.InterfacePayload(
-        function_name=interface_data.get("function_name") or dtl.title,
-        inputs=interface_data.get("inputs") or [{"name": "input", "description": raw[:200]}],
-        outputs=interface_data.get("outputs") or [{"name": "result", "description": raw[:200]}],
-        mcp_spec=interface_data.get("mcp_spec"),
+        function_name=function_name,
+        inputs=inputs,
+        outputs=outputs,
+        mcp_spec=mcp_spec,
     )
 
 
@@ -206,12 +234,20 @@ def save_configuration(
 
 
 @router.post("/{dtl_id}/configuration/generate", response_model=schemas.ConfigurationPayload)
-def generate_configuration(dtl: models.DTL = Depends(resolve_dtl)):
+def generate_configuration(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
     prompt = prompt_builder.configuration(title=dtl.title, legal_text=dtl.legal_text[:1500])
     raw, parsed = llm_service.generate_structured(prompt)
     configuration_owl = raw
     if isinstance(parsed, dict) and parsed.get("configuration_owl"):
         configuration_owl = parsed["configuration_owl"]
+
+    if dtl.configuration:
+        dtl.configuration.configuration_owl = configuration_owl
+    else:
+        dtl.configuration = models.DTLConfiguration(configuration_owl=configuration_owl)
+
+    db.add(dtl)
+    db.commit()
     return schemas.ConfigurationPayload(configuration_owl=configuration_owl)
 
 
@@ -360,7 +396,7 @@ def save_logic(
 
 
 @router.post("/{dtl_id}/logic/generate", response_model=schemas.LogicPayload)
-def generate_logic(dtl: models.DTL = Depends(resolve_dtl)):
+def generate_logic(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
     prompt = prompt_builder.logic(title=dtl.title, legal_text=dtl.legal_text[:1200])
     raw, parsed = llm_service.generate_structured(prompt)
 
@@ -372,6 +408,16 @@ def generate_logic(dtl: models.DTL = Depends(resolve_dtl)):
             code = parsed["code"]
 
     annotated_code = f"# LLM Hint: {raw[:200]}\n{code}"
+
+    if dtl.logic:
+        dtl.logic.language = language
+        dtl.logic.code = annotated_code
+    else:
+        dtl.logic = models.DTLLogic(language=language, code=annotated_code)
+
+    db.add(dtl)
+    db.commit()
+
     return schemas.LogicPayload(language=language, code=annotated_code)
 
 
