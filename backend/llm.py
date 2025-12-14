@@ -12,6 +12,7 @@ class LLMService:
         self.endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         self.api_key = os.getenv("AZURE_OPENAI_API_KEY")
         self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        self.temperature = self._get_temperature()
         self.client: Optional[AzureOpenAI] = None
         if self.endpoint and self.api_key:
             try:
@@ -28,12 +29,15 @@ class LLMService:
         if not self.client or not self.deployment:
             return f"[stubbed LLM response for prompt: {prompt[:120]}...]"
         try:
-            completion = self.client.chat.completions.create(
-                model=self.deployment,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
-                max_completion_tokens=800,
-            )
+            completion_params = {
+                "model": self.deployment,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_completion_tokens": 800,
+            }
+            if self.temperature is not None:
+                completion_params["temperature"] = self.temperature
+
+            completion = self.client.chat.completions.create(**completion_params)
             return completion.choices[0].message.content or ""
         except Exception as exc:
             logger.warning(
@@ -46,6 +50,19 @@ class LLMService:
                 exc_info=True,
             )
             return  f"[No LLM-Response] {prompt[:120]}..."
+
+    def _get_temperature(self) -> Optional[float]:
+        raw_temperature = os.getenv("AZURE_OPENAI_TEMPERATURE")
+        if raw_temperature is None:
+            return None
+        try:
+            return float(raw_temperature)
+        except ValueError:
+            logger.warning(
+                "Invalid AZURE_OPENAI_TEMPERATURE value %r. Using model default.",
+                raw_temperature,
+            )
+            return None
 
 
 llm_service = LLMService()
