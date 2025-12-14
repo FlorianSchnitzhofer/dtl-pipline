@@ -141,6 +141,19 @@ export interface LogicData {
   code: string;
 }
 
+export interface DTLGenerationResult {
+  ontology: OntologyData;
+  ontology_raw: string;
+  interface: InterfaceData;
+  interface_raw: string;
+  configuration: ConfigurationData;
+  configuration_raw: string;
+  tests: TestCase[];
+  tests_raw: string;
+  logic: LogicData;
+  logic_raw: string;
+}
+
 export interface ReviewComment {
   id: string;
   author: string;
@@ -340,6 +353,12 @@ export const dtlAPI = {
         ...data,
         status: mapDTLStatusToAPI(data.status),
       }),
+    });
+  },
+
+  generateAll: async (dtlibId: string, dtlId: string): Promise<DTLGenerationResult> => {
+    return fetchAPI<DTLGenerationResult>(`/dtlibs/${dtlibId}/dtls/${dtlId}/generate-all`, {
+      method: 'POST',
     });
   },
 

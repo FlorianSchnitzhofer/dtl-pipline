@@ -421,6 +421,134 @@ def generate_logic(db: Session = Depends(get_db), dtl: models.DTL = Depends(reso
     return schemas.LogicPayload(language=language, code=annotated_code)
 
 
+@router.post("/{dtl_id}/generate-all", response_model=schemas.DTLGenerationResponse)
+def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
+    ontology_prompt = prompt_builder.ontology(
+        title=dtl.title, reference=dtl.legal_reference, legal_text=dtl.legal_text[:2000]
+    )
+    ontology_raw, ontology_parsed = llm_service.generate_structured(ontology_prompt)
+    ontology_owl = (
+        ontology_parsed.get("ontology_owl")
+        if isinstance(ontology_parsed, dict) and ontology_parsed.get("ontology_owl")
+        else ontology_raw
+    )
+
+    interface_prompt = prompt_builder.interface(title=dtl.title, legal_text=dtl.legal_text[:1500])
+    interface_raw, interface_parsed = llm_service.generate_structured(interface_prompt)
+    interface_defaults = {
+        "function_name": dtl.title,
+        "inputs": [],
+        "outputs": [],
+        "mcp_spec": {"hint": interface_raw},
+    }
+    interface_data = interface_defaults | (
+        {k: v for k, v in interface_parsed.items() if k in interface_defaults}
+        if isinstance(interface_parsed, dict)
+        else {}
+    )
+    interface_json = {
+        "function_name": interface_data.get("function_name") or dtl.title,
+        "inputs": interface_data.get("inputs") or [{"name": "input", "description": interface_raw[:200]}],
+        "outputs": interface_data.get("outputs") or [{"name": "result", "description": interface_raw[:200]}],
+    }
+    mcp_spec = interface_data.get("mcp_spec")
+
+    configuration_prompt = prompt_builder.configuration(title=dtl.title, legal_text=dtl.legal_text[:1500])
+    configuration_raw, configuration_parsed = llm_service.generate_structured(configuration_prompt)
+    configuration_owl = (
+        configuration_parsed.get("configuration_owl")
+        if isinstance(configuration_parsed, dict) and configuration_parsed.get("configuration_owl")
+        else configuration_raw
+    )
+
+    tests_prompt = prompt_builder.tests(title=dtl.title, legal_text=dtl.legal_text[:1500])
+    tests_raw, tests_parsed = llm_service.generate_structured(tests_prompt)
+
+    for test in list(dtl.tests):
+        db.delete(test)
+
+    generated_tests: list[models.DTLTest] = []
+    if isinstance(tests_parsed, dict) and isinstance(tests_parsed.get("tests"), list):
+        for index, proposed in enumerate(tests_parsed["tests"]):
+            test = models.DTLTest(
+                dtl_id=dtl.id,
+                name=proposed.get("name") or f"LLM Test {index + 1}",
+                input_json=proposed.get("input") or {"hint": tests_raw[:80]},
+                expected_output_json=proposed.get("expected_output") or {"expected": tests_raw[:80]},
+                description=proposed.get("description") or tests_raw[:255],
+            )
+            db.add(test)
+            generated_tests.append(test)
+
+    if not generated_tests:
+        fallback = models.DTLTest(
+            dtl_id=dtl.id,
+            name="LLM Proposed Test",
+            input_json={"prompt": tests_raw[:120]},
+            expected_output_json={"expected": tests_raw[:120]},
+            description=tests_raw[:255],
+        )
+        db.add(fallback)
+        generated_tests.append(fallback)
+
+    logic_prompt = prompt_builder.logic(title=dtl.title, legal_text=dtl.legal_text[:1200])
+    logic_raw, logic_parsed = llm_service.generate_structured(logic_prompt)
+    logic_language = "Python"
+    logic_code = logic_raw
+    if isinstance(logic_parsed, dict):
+        logic_language = logic_parsed.get("language") or logic_language
+        if logic_parsed.get("code"):
+            logic_code = logic_parsed["code"]
+    logic_payload = schemas.LogicPayload(
+        language=logic_language, code=f"# LLM Hint: {logic_raw[:200]}\n{logic_code}"
+    )
+
+    if dtl.ontology:
+        dtl.ontology.ontology_owl = ontology_owl
+    else:
+        dtl.ontology = models.DTLOntology(ontology_owl=ontology_owl)
+
+    if dtl.interface:
+        dtl.interface.interface_json = interface_json
+        dtl.interface.mcp_spec = mcp_spec
+    else:
+        dtl.interface = models.DTLInterface(interface_json=interface_json, mcp_spec=mcp_spec)
+
+    if dtl.configuration:
+        dtl.configuration.configuration_owl = configuration_owl
+    else:
+        dtl.configuration = models.DTLConfiguration(configuration_owl=configuration_owl)
+
+    if dtl.logic:
+        dtl.logic.language = logic_payload.language
+        dtl.logic.code = logic_payload.code
+    else:
+        dtl.logic = models.DTLLogic(language=logic_payload.language, code=logic_payload.code)
+
+    db.add(dtl)
+    db.commit()
+    for test in generated_tests:
+        db.refresh(test)
+
+    return schemas.DTLGenerationResponse(
+        ontology=schemas.OntologyPayload(ontology_owl=ontology_owl),
+        ontology_raw=ontology_raw,
+        interface=schemas.InterfacePayload(
+            function_name=interface_json["function_name"],
+            inputs=interface_json.get("inputs", []),
+            outputs=interface_json.get("outputs", []),
+            mcp_spec=mcp_spec,
+        ),
+        interface_raw=interface_raw,
+        configuration=schemas.ConfigurationPayload(configuration_owl=configuration_owl),
+        configuration_raw=configuration_raw,
+        tests=[_serialize_test(test) for test in generated_tests],
+        tests_raw=tests_raw,
+        logic=logic_payload,
+        logic_raw=logic_raw,
+    )
+
+
 @router.get("/{dtl_id}/review", response_model=schemas.ReviewRead)
 def review_summary(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
     if not dtl.review:
