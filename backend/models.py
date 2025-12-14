@@ -86,6 +86,7 @@ class DTLOntology(Base):
 
     dtl_id = Column(Integer, ForeignKey("dtls.id"), primary_key=True)
     ontology_owl = Column(Text, nullable=False)
+    raw_response = Column(Text, nullable=True)
     generated_by = Column(String(191), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
