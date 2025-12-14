@@ -493,12 +493,12 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setError(null);
-    
+
     try {
       const apiSuggestions = await dtlibAPI.segment(dtlib.id);
       setSuggestions(apiSuggestions.map(s => ({
-        name: s.title,
-        description: s.description,
+        name: s.suggestion_title,
+        description: s.suggestion_description || '',
         legalText: s.legal_text,
         legalReference: s.legal_reference,
         category: 'Process' // Default category, can be enhanced
