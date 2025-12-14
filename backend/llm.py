@@ -45,7 +45,10 @@ class LLMService:
                 exc,
                 exc_info=True,
             )
-            return f"[stubbed LLM response for prompt: {prompt[:120]}...]"
+            return  f"[No LLM-Response]\n"
+                    f"Deployment: {self.deployment}\n"
+                    f"Endpoint: {self.endpoint}\n"
+                    f"Prompt preview: {prompt[:120]}..."
 
 
 llm_service = LLMService()
