@@ -21,6 +21,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
   const [isEditingMetadata, setIsEditingMetadata] = useState(false);
   const [isEditingLawText, setIsEditingLawText] = useState(false);
   const [showSegmentationModal, setShowSegmentationModal] = useState(false);
+  const [showManualCreateModal, setShowManualCreateModal] = useState(false);
 
   const [metadataForm, setMetadataForm] = useState({
     name: dtlib.name,
@@ -376,13 +377,22 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                   Segmented legal functions derived from the statute
                 </p>
               </div>
-              <button
-                onClick={() => setShowSegmentationModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Sparkles className="size-5" />
-                AI-Assisted Segmentation
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowManualCreateModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-900 rounded-lg hover:bg-slate-200 transition-colors"
+                >
+                  <Plus className="size-5" />
+                  Add manual DTL
+                </button>
+                <button
+                  onClick={() => setShowSegmentationModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Sparkles className="size-5" />
+                  AI-Assisted Segmentation
+                </button>
+              </div>
             </div>
 
             {/* DTL List */}
@@ -391,15 +401,25 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                 <FileText className="size-12 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-slate-900 mb-2">No DTLs created yet</h3>
                 <p className="text-slate-600 mb-6">
-                  Use AI-assisted segmentation to automatically identify and create DTLs from the statutory text
+                  Use AI-assisted segmentation to automatically identify and create DTLs from the statutory text, or add a DTL
+                  manually.
                 </p>
-                <button
-                  onClick={() => setShowSegmentationModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Sparkles className="size-5" />
-                  Start Segmentation
-                </button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    onClick={() => setShowSegmentationModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Sparkles className="size-5" />
+                    Start Segmentation
+                  </button>
+                  <button
+                    onClick={() => setShowManualCreateModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-900 rounded-lg hover:bg-slate-200 transition-colors"
+                  >
+                    <Plus className="size-5" />
+                    Add manual DTL
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -472,6 +492,156 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
           onCreateDTL={onCreateDTL}
         />
       )}
+
+      {/* Manual DTL Creation Modal */}
+      {showManualCreateModal && (
+        <ManualDTLModal
+          dtlib={dtlib}
+          onClose={() => setShowManualCreateModal(false)}
+          onCreateDTL={(dtl) => {
+            onCreateDTL(dtl);
+            setShowManualCreateModal(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
+  dtlib: DTLib;
+  onClose: () => void;
+  onCreateDTL: (dtl: Omit<DTL, 'id' | 'dtlibId'>) => void;
+}) {
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    legalReference: '',
+    legalText: '',
+    category: 'Process',
+    version: dtlib.version,
+    tags: '',
+    authoritativeUrl: dtlib.authoritativeUrl
+  });
+
+  const handleSubmit = () => {
+    onCreateDTL({
+      name: form.name,
+      description: form.description,
+      legalReference: form.legalReference,
+      legalText: form.legalText,
+      category: form.category,
+      tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+      ownerUserId: null,
+      version: form.version,
+      authoritativeUrl: form.authoritativeUrl,
+      reviewStatus: 'pending'
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4">
+          <h2 className="text-slate-900">Add manual DTL</h2>
+          <p className="text-slate-600 mt-1">Create a DTL by manually entering the key details from the statute.</p>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="DTL title"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+              <input
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., Process"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Legal Reference</label>
+              <input
+                value={form.legalReference}
+                onChange={(e) => setForm({ ...form, legalReference: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Section / clause"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Version</label>
+              <input
+                value={form.version}
+                onChange={(e) => setForm({ ...form, version: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Authoritative Source URL</label>
+              <input
+                value={form.authoritativeUrl}
+                onChange={(e) => setForm({ ...form, authoritativeUrl: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="https://"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tags</label>
+              <input
+                value={form.tags}
+                onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="tag1, tag2"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Brief summary of the DTL"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Legal Text</label>
+            <textarea
+              value={form.legalText}
+              onChange={(e) => setForm({ ...form, legalText: e.target.value })}
+              rows={6}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              placeholder="Relevant statutory text for this DTL"
+            />
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Create DTL
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
