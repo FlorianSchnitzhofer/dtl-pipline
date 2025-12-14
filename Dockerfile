@@ -3,7 +3,7 @@ FROM node:18 AS frontend-build
 WORKDIR /app/frontend
 
 COPY frontend/package*.json ./
-RUN npm ci --no-optional
+RUN npm ci
 
 COPY frontend ./
 ARG VITE_API_BASE_URL=/api
