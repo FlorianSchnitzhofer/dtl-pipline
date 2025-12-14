@@ -25,6 +25,6 @@ services:
       API_PUBLIC_BASE_URL: ${API_PUBLIC_BASE_URL:-http://localhost}
       FRONTEND_DIST_PATH: /app/frontend/dist
     ports:
-      - "80:8000"
+      - "80:80"
     depends_on:
       - db
