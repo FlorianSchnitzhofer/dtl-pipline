@@ -6,7 +6,7 @@ import {
   interfaceAPI,
   logicAPI,
   ontologyAPI,
-  testsAPI,
+  testAPI,
   type ConfigurationData,
   type InterfaceData,
   type LogicData,
@@ -56,7 +56,7 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
           ontologyAPI.get(dtlib.id, dtl.id),
           interfaceAPI.get(dtlib.id, dtl.id),
           configurationAPI.get(dtlib.id, dtl.id),
-          testsAPI.list(dtlib.id, dtl.id),
+          testAPI.list(dtlib.id, dtl.id),
           logicAPI.get(dtlib.id, dtl.id),
         ]);
 
@@ -141,7 +141,7 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
   };
 
   const handleGenerateTests = async () => {
-    const payload = await testsAPI.generate(dtlib.id, dtl.id);
+    const payload = await testAPI.generate(dtlib.id, dtl.id);
     if (payload) {
       setTests(payload);
       setRawResponses((prev) => ({ ...prev, tests: JSON.stringify(payload, null, 2) }));
@@ -1430,30 +1430,6 @@ function ReviewStage({
               </button>
             </div>
           </div>
-        </div>
-        )}
-      </div>
-
-      {rawResponse && (
-        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
-          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
-        </div>
-        )}
-      </div>
-
-      {rawResponse && (
-        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
-          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
-        </div>
-        )}
-      </div>
-
-      {rawResponse && (
-        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <p className="text-sm font-medium text-slate-700 mb-2">Prompt response</p>
-          <pre className="text-xs text-slate-800 whitespace-pre-wrap">{rawResponse}</pre>
         </div>
       )}
     </div>
