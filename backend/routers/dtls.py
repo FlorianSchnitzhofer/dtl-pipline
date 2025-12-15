@@ -539,7 +539,6 @@ def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depe
         dtl.logic = models.DTLLogic(language=logic_payload.language, code=logic_payload.code)
 
     db.add(dtl)
-    db.add(dtl.ontology)
     db.commit()
     for test in generated_tests:
         db.refresh(test)
