@@ -796,10 +796,11 @@ function OntologyStage({
                 <strong>Traceability:</strong> This ontology is derived from {dtl.legalReference} and defines the semantic concepts used in the DTL interface and logic.
               </p>
             </div>
-            <RawResponsePanel label="LLM Antwort" content={rawResponse} />
           </div>
         )}
       </div>
+
+      <RawResponsePanel label="LLM Antwort" content={rawResponse} />
     </div>
   );
 }
