@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from typing import Optional, List, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class UserCreate(BaseModel):
@@ -16,8 +16,7 @@ class UserRead(UserCreate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DTLIBBase(BaseModel):
@@ -55,8 +54,7 @@ class DTLIBRead(DTLIBBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DTLBase(BaseModel):
@@ -94,8 +92,7 @@ class DTLRead(DTLBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SegmentationSuggestionCreate(BaseModel):
@@ -112,8 +109,7 @@ class SegmentationSuggestionRead(SegmentationSuggestionCreate):
     status: str
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OntologyPayload(BaseModel):
@@ -156,8 +152,7 @@ class TestCaseRead(TestCaseBase):
     last_run_at: Optional[datetime] = None
     last_result: Optional[str] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LogicPayload(BaseModel):
@@ -202,8 +197,7 @@ class CommentRead(CommentCreate):
     dtl_id: int
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OverviewSnapshot(BaseModel):
