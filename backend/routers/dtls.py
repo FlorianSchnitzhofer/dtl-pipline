@@ -97,9 +97,7 @@ def delete_dtl(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_
 def get_ontology(dtl: models.DTL = Depends(resolve_dtl)):
     if not dtl.ontology:
         return None
-    return schemas.OntologyPayload(
-        ontology_owl=dtl.ontology.ontology_owl, raw_response=dtl.ontology.raw_response
-    )
+    return schemas.OntologyPayload(ontology_owl=dtl.ontology.ontology_owl)
 
 
 @router.put("/{dtl_id}/ontology", response_model=schemas.OntologyPayload)
@@ -108,23 +106,14 @@ def save_ontology(
     db: Session = Depends(get_db),
     dtl: models.DTL = Depends(resolve_dtl),
 ):
-    raw_response = payload.raw_response
     if dtl.ontology:
         dtl.ontology.ontology_owl = payload.ontology_owl
-        if raw_response is not None:
-            dtl.ontology.raw_response = raw_response
-        elif dtl.ontology.raw_response is None:
-            dtl.ontology.raw_response = payload.ontology_owl
     else:
-        stored_raw = raw_response or payload.ontology_owl
         dtl.ontology = models.DTLOntology(
-            ontology_owl=payload.ontology_owl, raw_response=stored_raw
-        )
+            ontology_owl=payload.ontology_owl)
     db.add(dtl)
     db.commit()
-    return schemas.OntologyPayload(
-        ontology_owl=payload.ontology_owl, raw_response=dtl.ontology.raw_response
-    )
+    return payload
 
 
 @router.post("/{dtl_id}/ontology/generate", response_model=schemas.OntologyPayload)
@@ -140,13 +129,12 @@ def generate_ontology(db: Session = Depends(get_db), dtl: models.DTL = Depends(r
 
     if dtl.ontology:
         dtl.ontology.ontology_owl = ontology_owl
-        dtl.ontology.raw_response = raw
     else:
-        dtl.ontology = models.DTLOntology(ontology_owl=ontology_owl, raw_response=raw)
+        dtl.ontology = models.DTLOntology(ontology_owl=ontology_owl)
 
     db.add(dtl)
     db.commit()
-    return schemas.OntologyPayload(ontology_owl=dtl.ontology.ontology_owl, raw_response=dtl.ontology.raw_response)
+    return schemas.OntologyPayload(ontology_owl=dtl.ontology.ontology_owl)
 
 
 @router.get("/{dtl_id}/interface", response_model=schemas.InterfacePayload | None)
@@ -515,11 +503,9 @@ def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depe
 
     if dtl.ontology:
         dtl.ontology.ontology_owl = ontology_owl
-        dtl.ontology.raw_response = ontology_raw
     else:
         dtl.ontology = models.DTLOntology(
-            ontology_owl=ontology_owl, raw_response=ontology_raw
-        )
+            ontology_owl=ontology_owl)
 
     if dtl.interface:
         dtl.interface.interface_json = interface_json
