@@ -108,19 +108,25 @@ def save_ontology(
     db: Session = Depends(get_db),
     dtl: models.DTL = Depends(resolve_dtl),
 ):
-    raw_response = payload.raw_response or payload.ontology_owl
+    raw_response = payload.raw_response
     if dtl.ontology:
         dtl.ontology.ontology_owl = payload.ontology_owl
-        dtl.ontology.raw_response = raw_response
+        if raw_response is not None:
+            dtl.ontology.raw_response = raw_response
+        elif dtl.ontology.raw_response is None:
+            dtl.ontology.raw_response = payload.ontology_owl
     else:
+        stored_raw = raw_response or payload.ontology_owl
         dtl.ontology = models.DTLOntology(
-            ontology_owl=payload.ontology_owl, raw_response=raw_response
+            ontology_owl=payload.ontology_owl, raw_response=stored_raw
         )
     db.add(dtl)
     db.add(dtl.ontology)
     db.commit()
     db.refresh(dtl.ontology)
-    return schemas.OntologyPayload(ontology_owl=payload.ontology_owl, raw_response=raw_response)
+    return schemas.OntologyPayload(
+        ontology_owl=payload.ontology_owl, raw_response=dtl.ontology.raw_response
+    )
 
 
 @router.post("/{dtl_id}/ontology/generate", response_model=schemas.OntologyPayload)
@@ -433,9 +439,7 @@ def generate_logic(db: Session = Depends(get_db), dtl: models.DTL = Depends(reso
 
 @router.post("/{dtl_id}/generate-all", response_model=schemas.DTLGenerationResponse)
 def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
-    ontology_prompt = prompt_builder.ontology(
-        title=dtl.title, reference=dtl.legal_reference, legal_text=dtl.legal_text[:2000]
-    )
+    ontology_prompt = prompt_builder.ontology(title=dtl.title, legal_text=dtl.legal_text[:2000])
     ontology_raw, ontology_parsed = llm_service.generate_structured(ontology_prompt)
     ontology_owl = (
         ontology_parsed.get("ontology_owl")
@@ -545,7 +549,9 @@ def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depe
         db.refresh(test)
 
     return schemas.DTLGenerationResponse(
-        ontology=schemas.OntologyPayload(ontology_owl=ontology_owl),
+        ontology=schemas.OntologyPayload(
+            ontology_owl=ontology_owl, raw_response=ontology_raw
+        ),
         ontology_raw=ontology_raw,
         interface=schemas.InterfacePayload(
             function_name=interface_json["function_name"],
