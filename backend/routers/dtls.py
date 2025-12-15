@@ -40,6 +40,53 @@ def _serialize_comment(comment: models.DTLComment) -> schemas.CommentRead:
     )
 
 
+def _persist_ontology(
+    db: Session,
+    dtl: models.DTL,
+    ontology_owl: str,
+    raw_response: str | None = None,
+    commit: bool = True,
+) -> schemas.OntologyPayload:
+    """Create or update ontology records with consistent raw storage.
+
+    When commit is False, the caller is responsible for final persistence.
+    """
+
+    stored_raw = raw_response if raw_response is not None else ontology_owl
+    if dtl.ontology:
+        dtl.ontology.ontology_owl = ontology_owl
+        dtl.ontology.raw_response = stored_raw
+    else:
+        dtl.ontology = models.DTLOntology(
+            ontology_owl=ontology_owl,
+            raw_response=stored_raw,
+        )
+
+    db.add(dtl)
+    db.add(dtl.ontology)
+    if commit:
+        db.commit()
+        db.refresh(dtl.ontology)
+    else:
+        db.flush()
+
+    return schemas.OntologyPayload(
+        ontology_owl=dtl.ontology.ontology_owl,
+        raw_response=dtl.ontology.raw_response,
+    )
+
+
+def _copy_configuration_ontology(dtl: models.DTL) -> str:
+    """Return the configuration owl content or raise if missing."""
+
+    if not dtl.configuration:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Configuration must exist before generating ontology",
+        )
+    return dtl.configuration.configuration_owl
+
+
 @router.get("", response_model=List[schemas.DTLRead])
 def list_dtls(
     dtlib_id: int,
@@ -108,49 +155,23 @@ def save_ontology(
     db: Session = Depends(get_db),
     dtl: models.DTL = Depends(resolve_dtl),
 ):
-    raw_response = payload.raw_response
-    if dtl.ontology:
-        dtl.ontology.ontology_owl = payload.ontology_owl
-        if raw_response is not None:
-            dtl.ontology.raw_response = raw_response
-        elif dtl.ontology.raw_response is None:
-            dtl.ontology.raw_response = payload.ontology_owl
-    else:
-        stored_raw = raw_response or payload.ontology_owl
-        dtl.ontology = models.DTLOntology(
-            ontology_owl=payload.ontology_owl, raw_response=stored_raw
-        )
-    db.add(dtl)
-    db.add(dtl.ontology)
-    db.commit()
-    db.refresh(dtl.ontology)
-    return schemas.OntologyPayload(
-        ontology_owl=payload.ontology_owl, raw_response=dtl.ontology.raw_response
+    return _persist_ontology(
+        db=db,
+        dtl=dtl,
+        ontology_owl=payload.ontology_owl,
+        raw_response=payload.raw_response,
     )
 
 
 @router.post("/{dtl_id}/ontology/generate", response_model=schemas.OntologyPayload)
 def generate_ontology(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
-    prompt = prompt_builder.ontology(
-        title=dtl.title,
-        legal_text=dtl.legal_text[:2000],
+    configuration_owl = _copy_configuration_ontology(dtl)
+    return _persist_ontology(
+        db=db,
+        dtl=dtl,
+        ontology_owl=configuration_owl,
+        raw_response=configuration_owl,
     )
-    raw, parsed = llm_service.generate_structured(prompt)
-    ontology_owl = raw
-    if isinstance(parsed, dict) and parsed.get("ontology_owl"):
-        ontology_owl = parsed["ontology_owl"]
-
-    if dtl.ontology:
-        dtl.ontology.ontology_owl = ontology_owl
-        dtl.ontology.raw_response = raw
-    else:
-        dtl.ontology = models.DTLOntology(ontology_owl=ontology_owl, raw_response=raw)
-
-    db.add(dtl)
-    db.add(dtl.ontology)
-    db.commit()
-    db.refresh(dtl.ontology)
-    return schemas.OntologyPayload(ontology_owl=dtl.ontology.ontology_owl, raw_response=dtl.ontology.raw_response)
 
 
 @router.get("/{dtl_id}/interface", response_model=schemas.InterfacePayload | None)
@@ -439,14 +460,6 @@ def generate_logic(db: Session = Depends(get_db), dtl: models.DTL = Depends(reso
 
 @router.post("/{dtl_id}/generate-all", response_model=schemas.DTLGenerationResponse)
 def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
-    ontology_prompt = prompt_builder.ontology(title=dtl.title, legal_text=dtl.legal_text[:2000])
-    ontology_raw, ontology_parsed = llm_service.generate_structured(ontology_prompt)
-    ontology_owl = (
-        ontology_parsed.get("ontology_owl")
-        if isinstance(ontology_parsed, dict) and ontology_parsed.get("ontology_owl")
-        else ontology_raw
-    )
-
     interface_prompt = prompt_builder.interface(title=dtl.title, legal_text=dtl.legal_text[:1500])
     interface_raw, interface_parsed = llm_service.generate_structured(interface_prompt)
     interface_defaults = {
@@ -474,6 +487,9 @@ def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depe
         if isinstance(configuration_parsed, dict) and configuration_parsed.get("configuration_owl")
         else configuration_raw
     )
+
+    ontology_raw = configuration_raw
+    ontology_owl = configuration_owl
 
     tests_prompt = prompt_builder.tests(title=dtl.title, legal_text=dtl.legal_text[:1500])
     tests_raw, tests_parsed = llm_service.generate_structured(tests_prompt)
@@ -517,13 +533,13 @@ def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depe
         language=logic_language, code=f"# LLM Hint: {logic_raw[:200]}\n{logic_code}"
     )
 
-    if dtl.ontology:
-        dtl.ontology.ontology_owl = ontology_owl
-        dtl.ontology.raw_response = ontology_raw
-    else:
-        dtl.ontology = models.DTLOntology(
-            ontology_owl=ontology_owl, raw_response=ontology_raw
-        )
+    _persist_ontology(
+        db=db,
+        dtl=dtl,
+        ontology_owl=ontology_owl,
+        raw_response=ontology_raw,
+        commit=False,
+    )
 
     if dtl.interface:
         dtl.interface.interface_json = interface_json
@@ -543,8 +559,8 @@ def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depe
         dtl.logic = models.DTLLogic(language=logic_payload.language, code=logic_payload.code)
 
     db.add(dtl)
-    db.add(dtl.ontology)
     db.commit()
+    db.refresh(dtl.ontology)
     for test in generated_tests:
         db.refresh(test)
 

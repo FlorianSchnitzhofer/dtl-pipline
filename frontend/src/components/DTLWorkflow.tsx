@@ -205,15 +205,29 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
   };
 
   const handleGenerateOntology = async () => {
-    const payload = await ontologyAPI.generate(dtlib.id, dtl.id);
-    if (payload) {
-      setOntology(payload);
-      setRawResponses((prev) => ({
-        ...prev,
-        ontology: payload.raw_response ?? payload.ontology_owl,
-      }));
-      return payload.ontology_owl;
+    if (!configuration?.configuration_owl) {
+      const message = 'Generate configuration before deriving the ontology.';
+      setArtifactError(message);
+      return null;
     }
+
+    setArtifactError(null);
+
+    try {
+      const payload = await ontologyAPI.generate(dtlib.id, dtl.id);
+      if (payload) {
+        setOntology(payload);
+        setRawResponses((prev) => ({
+          ...prev,
+          ontology: payload.raw_response ?? payload.ontology_owl,
+        }));
+        return payload.ontology_owl;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to copy ontology from configuration';
+      setArtifactError(message);
+    }
+
     return null;
   };
 
@@ -716,7 +730,7 @@ function OntologyStage({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-slate-900 mb-2">Ontology Design</h2>
-          <p className="text-slate-600">Define the semantic model and concepts for this DTL</p>
+          <p className="text-slate-600">Reuse the configuration OWL as the semantic model for this DTL</p>
         </div>
         <div className="flex items-center gap-3">
           {!ontology?.ontology_owl && !owlContent && (
@@ -726,7 +740,7 @@ function OntologyStage({
               className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
             >
               <Sparkles className="size-4" />
-              {isGenerating ? 'Generating...' : 'Generate from Law'}
+              {isGenerating ? 'Copying...' : 'Copy from Configuration'}
             </button>
           )}
           {!isEditing && (ontology?.ontology_owl || owlContent) && (
@@ -744,7 +758,7 @@ function OntologyStage({
         {isGenerating && (
           <div className="mb-4">
             <GenerationProgressBar
-              label="Processing ontology response"
+              label="Copying configuration into ontology"
               progress={progress.progress}
               elapsedSeconds={progress.elapsedSeconds}
             />
@@ -755,7 +769,7 @@ function OntologyStage({
             <Network className="size-12 text-purple-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No ontology defined yet</h3>
             <p className="text-slate-600 mb-6">
-              Generate an ontology from the legal text using AI assistance
+              Copy the existing configuration code directly into the ontology slot
             </p>
           </div>
         ) : isEditing ? (
@@ -800,7 +814,7 @@ function OntologyStage({
         )}
       </div>
 
-      <RawResponsePanel label="LLM Antwort" content={rawResponse} />
+      <RawResponsePanel label="Configuration Source" content={rawResponse} />
     </div>
   );
 }
