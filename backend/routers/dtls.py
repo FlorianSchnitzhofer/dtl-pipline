@@ -117,7 +117,9 @@ def save_ontology(
             ontology_owl=payload.ontology_owl, raw_response=raw_response
         )
     db.add(dtl)
+    db.add(dtl.ontology)
     db.commit()
+    db.refresh(dtl.ontology)
     return schemas.OntologyPayload(ontology_owl=payload.ontology_owl, raw_response=raw_response)
 
 
@@ -140,8 +142,10 @@ def generate_ontology(db: Session = Depends(get_db), dtl: models.DTL = Depends(r
         dtl.ontology = models.DTLOntology(ontology_owl=ontology_owl, raw_response=raw)
 
     db.add(dtl)
+    db.add(dtl.ontology)
     db.commit()
-    return schemas.OntologyPayload(ontology_owl=ontology_owl, raw_response=raw)
+    db.refresh(dtl.ontology)
+    return schemas.OntologyPayload(ontology_owl=dtl.ontology.ontology_owl, raw_response=dtl.ontology.raw_response)
 
 
 @router.get("/{dtl_id}/interface", response_model=schemas.InterfacePayload | None)
@@ -536,6 +540,7 @@ def generate_all_artifacts(db: Session = Depends(get_db), dtl: models.DTL = Depe
         dtl.logic = models.DTLLogic(language=logic_payload.language, code=logic_payload.code)
 
     db.add(dtl)
+    db.add(dtl.ontology)
     db.commit()
     for test in generated_tests:
         db.refresh(test)
