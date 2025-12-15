@@ -121,9 +121,7 @@ def save_ontology(
             ontology_owl=payload.ontology_owl, raw_response=stored_raw
         )
     db.add(dtl)
-    db.add(dtl.ontology)
     db.commit()
-    db.refresh(dtl.ontology)
     return schemas.OntologyPayload(
         ontology_owl=payload.ontology_owl, raw_response=dtl.ontology.raw_response
     )
@@ -147,9 +145,7 @@ def generate_ontology(db: Session = Depends(get_db), dtl: models.DTL = Depends(r
         dtl.ontology = models.DTLOntology(ontology_owl=ontology_owl, raw_response=raw)
 
     db.add(dtl)
-    db.add(dtl.ontology)
     db.commit()
-    db.refresh(dtl.ontology)
     return schemas.OntologyPayload(ontology_owl=dtl.ontology.ontology_owl, raw_response=dtl.ontology.raw_response)
 
 
