@@ -78,9 +78,9 @@ def segment_dtlib(db: Session = Depends(get_db), dtlib: models.DTLIB = Depends(r
         for index, segment in enumerate(parsed["segments"][:5]):
             suggestion = models.SegmentationSuggestion(
                 dtlib_id=dtlib.id,
-                suggestion_title=segment.get("title") or f"LLM Segment {index + 1}",
-                suggestion_description=segment.get("description") or raw[:255],
-                legal_text=segment.get("legal_text"),
+                suggestion_title=segment.get("title") or f"No AI static Segment {index + 1}",
+                suggestion_description=segment.get("description") or "Couldn't get suggestion from AI Agent",
+                legal_text=segment.get("legal_text") or "Couldn't get suggestion from AI Agent",
                 legal_reference=segment.get("legal_reference") or "Auto",
             )
             db.add(suggestion)
@@ -89,7 +89,7 @@ def segment_dtlib(db: Session = Depends(get_db), dtlib: models.DTLIB = Depends(r
     if not suggestions:
         fallback = models.SegmentationSuggestion(
             dtlib_id=dtlib.id,
-            suggestion_title="LLM Proposed Segment",
+            suggestion_title="Couldn't get suggestion from AI Agent",
             suggestion_description=raw[:255],
             legal_text=dtlib.full_text[:500],
             legal_reference="Auto",
