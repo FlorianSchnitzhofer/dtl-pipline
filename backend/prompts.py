@@ -43,13 +43,20 @@ class PromptBuilder:
 ONTOLOGY_PROMPT = PromptTemplate(
     description="OWL extraction for a DTL",
     template=(
-        "You are an expert knowledge engineer creating OWL ontologies for Digital Twin Laws (DTLs).\n"
-        "Translate the cited law text into exactly one OWL file representing the ontology only—no logic or rules—and return it as strict JSON with no prose.\n"
+#        "You are an expert knowledge engineer creating OWL ontologies for Digital Twin Laws (DTLs).\n"
+#        "Translate the cited law text into exactly one OWL file representing the ontology only—no logic or rules—and return it as strict JSON with no prose.\n"
+#        "Return a JSON object with key `ontology_owl` (string).\n"
+#        "The ontology_owl must be valid, consistent, error-free OWL, containing only semantic definitions of key terms of the law text.\n"
+#        "Keep identifiers stable, add rdfs:label for readability.\n"
+#       "Title: {title}\n"
+#        "Relevant legal text:\n{legal_text}"
+#        
+        "You are creating an OWL configuration snippet that captures measurable parameters, thresholds.\n"
         "Return a JSON object with key `ontology_owl` (string).\n"
-        "The ontology_owl must be valid, consistent, error-free OWL, containing only semantic definitions of key terms of the law text.\n"
-        "Keep identifiers stable, add rdfs:label for readability.\n"
-        "Title: {title}\n"
-        "Relevant legal text:\n{legal_text}"
+        "The ontology_owl must be valid, consistent, error-free OWL with only measurable parameters and thresholds\n"
+        "Keep identifiers stable and include data types.\n"
+        "DTL Title: {title}\n"
+        "Legal text to analyze:\n{legal_text}"
     ),
 )
 
