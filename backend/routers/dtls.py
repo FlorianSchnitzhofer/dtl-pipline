@@ -127,7 +127,6 @@ def save_ontology(
 def generate_ontology(db: Session = Depends(get_db), dtl: models.DTL = Depends(resolve_dtl)):
     prompt = prompt_builder.ontology(
         title=dtl.title,
-        reference=dtl.legal_reference,
         legal_text=dtl.legal_text[:2000],
     )
     raw, parsed = llm_service.generate_structured(prompt)
