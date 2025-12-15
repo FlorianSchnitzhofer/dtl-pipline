@@ -43,18 +43,10 @@ class PromptBuilder:
 ONTOLOGY_PROMPT = PromptTemplate(
     description="OWL extraction for a DTL",
     template=(
-#        "You are an expert knowledge engineer creating OWL ontologies for Digital Twin Laws (DTLs).\n"
-#        "Translate the cited law text into exactly one OWL file representing the ontology only—no logic or rules—and return it as strict JSON with no prose.\n"
-#        "Return a JSON object with key `ontology_owl` (string).\n"
-#        "The ontology_owl must be valid, consistent, error-free OWL, containing only semantic definitions of key terms of the law text.\n"
-#        "Keep identifiers stable, add rdfs:label for readability.\n"
-#       "Title: {title}\n"
-#        "Relevant legal text:\n{legal_text}"
-#        
-        "You are creating an OWL configuration snippet that captures measurable parameters, thresholds.\n"
+        "You are an expert knowledge engineer creating an OWL ontology to explain all the key terms for this legal text.\n"
         "Return a JSON object with key `ontology_owl` (string).\n"
-        "The ontology_owl must be valid, consistent, error-free OWL with only measurable parameters and thresholds\n"
-        "Keep identifiers stable and include data types.\n"
+        "The ontology_owl must be valid, consistent, error-free OWL with only semantic definitions of key terms of the law text.\n"
+        "Keep identifiers stable, add rdfs:label for readability.\n"
         "DTL Title: {title}\n"
         "Legal text to analyze:\n{legal_text}"
     ),
@@ -121,7 +113,7 @@ SEGMENTATION_PROMPT = PromptTemplate(
     template=(
         "Segment the following law into high-level Digital Twin Law functions.\n"
         "Return a JSON object with key `segments` listing objects that include:\n"
-        "- title: short name\n- description: summary that will be shown as a hint\n- legal_reference: pinpoint citation\n"
+        "- title: short name\n- description: summary of function that will be shown as a hint\n- legal_text: select segment of full legal text to semantic match with function (only original text and no manipulation)- legal_reference: pinpoint citation\n"
         "Law: {law_name} ({law_identifier})\n"
         "Full text excerpt:\n{full_text}"
     ),

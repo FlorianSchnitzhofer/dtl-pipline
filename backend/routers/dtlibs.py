@@ -69,7 +69,7 @@ def segment_dtlib(db: Session = Depends(get_db), dtlib: models.DTLIB = Depends(r
     prompt = prompt_builder.segmentation(
         law_name=dtlib.law_name,
         law_identifier=dtlib.law_identifier,
-        full_text=dtlib.full_text[:4000],
+        full_text=dtlib.full_text,
     )
     raw, parsed = llm_service.generate_structured(prompt)
 
@@ -80,7 +80,7 @@ def segment_dtlib(db: Session = Depends(get_db), dtlib: models.DTLIB = Depends(r
                 dtlib_id=dtlib.id,
                 suggestion_title=segment.get("title") or f"LLM Segment {index + 1}",
                 suggestion_description=segment.get("description") or raw[:255],
-                legal_text=dtlib.full_text[:500],
+                legal_text=segment.get("legal_text"),
                 legal_reference=segment.get("legal_reference") or "Auto",
             )
             db.add(suggestion)
