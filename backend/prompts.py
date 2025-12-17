@@ -48,9 +48,9 @@ ONTOLOGY_PROMPT = PromptTemplate(
     description="OWL extraction for a DTL",
     template=(
         "You are an expert knowledge engineer creating an OWL ontology to explain all the key terms for this legal text.\n"
-        "Return a JSON object with key `ontology_owl` (string).\n"
-        "The `ontology_owl` must be valid, consistent, error-free OWL with only semantic definitions of key terms of the law text.\n"
-        "Keep identifiers stable.\n"
+        "Return a valid JSON object with key `ontology_owl` (string).\n"
+        "The `ontology_owl` must be valid, consistent, error-free OWL with semantic definitions of key terms of the law text.\n"
+        "Ensure a valid and executable OWL ontology string.\n"
         "DTL Title: {title}\n"
         "Legal text to analyze:\n{legal_text}"
     ),
