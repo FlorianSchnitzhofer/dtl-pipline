@@ -15,6 +15,7 @@ class LLMService:
         self.api_key = os.getenv("AZURE_OPENAI_API_KEY")
         self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
         self.temperature = self._get_temperature()
+        self.debug_mode = os.getenv("LLM_DEBUG_MODE", "true").lower() in {"1", "true", "yes", "on"}
         self.client: Optional[AzureOpenAI] = None
         if self.endpoint and self.api_key:
             try:
@@ -28,9 +29,16 @@ class LLMService:
                 self.client = None
 
     def generate_text(self, prompt: str) -> str:
+        if self.debug_mode:
+            logger.error("LLM prompt (debug): %s", prompt)
+
         if not self.client or not self.deployment:
-            return f"[stubbed LLM response for prompt: {prompt[:120]}...]"
+            stubbed = f"[stubbed LLM response for prompt: {prompt[:120]}...]"
+            if self.debug_mode:
+                logger.error("LLM response (debug): %s", stubbed)
+            return stubbed
         try:
+
             completion_params = {
                 "model": self.deployment,
                 "messages": [{"role": "user", "content": prompt}],
@@ -38,9 +46,13 @@ class LLMService:
             }
             if self.temperature is not None:
                 completion_params["temperature"] = self.temperature
-
             completion = self.client.chat.completions.create(**completion_params)
-            return completion.choices[0].message.content or ""
+            response = completion.choices[0].message.content or ""
+
+            if self.debug_mode:
+                logger.error("LLM response (debug): %s", response)
+
+            return response
         except Exception as exc:
             logger.warning(
                 "LLM generation failed for deployment '%s' at '%s'. Prompt preview: %r. "
@@ -51,7 +63,10 @@ class LLMService:
                 exc,
                 exc_info=True,
             )
-            return f"[No LLM-Response] {prompt[:120]}..."
+            stubbed_error = f"[No LLM-Response] {prompt[:120]}..."
+            if self.debug_mode:
+                logger.error("LLM response (debug): %s", stubbed_error)
+            return stubbed_error
 
     def generate_structured(self, prompt: str) -> Tuple[str, Any]:
         """Return the raw text and a best-effort JSON-decoded object."""
