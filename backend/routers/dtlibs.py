@@ -89,7 +89,7 @@ def segment_dtlib(db: Session = Depends(get_db), dtlib: models.DTLIB = Depends(r
     if not suggestions:
         fallback = models.SegmentationSuggestion(
             dtlib_id=dtlib.id,
-            suggestion_title="Couldn't get suggestion from AI Agent",
+            suggestion_title="Couldn't get suggestion from AI Agent: {prompt}",
             suggestion_description=raw[:255],
             legal_text=dtlib.full_text[:500],
             legal_reference="Auto",
