@@ -11,7 +11,11 @@ class PromptTemplate:
     template: str
 
     def format(self, **kwargs: str) -> str:
-        return self.template.format(**kwargs)
+        escaped_kwargs = {
+            key: value.replace("{", "{{").replace("}", "}}") if isinstance(value, str) else value
+            for key, value in kwargs.items()
+        }
+        return self.template.format(**escaped_kwargs)
 
 
 class PromptBuilder:
@@ -45,7 +49,7 @@ ONTOLOGY_PROMPT = PromptTemplate(
     template=(
         "You are an expert knowledge engineer creating an OWL ontology to explain all the key terms for this legal text.\n"
         "Return a JSON object with key `ontology_owl` (string).\n"
-        "The `ontology_owl` must be valid, consistent, error-free OWL with oonly semantic definitions of key terms of the law text.\n"
+        "The `ontology_owl` must be valid, consistent, error-free OWL with only semantic definitions of key terms of the law text.\n"
         "Keep identifiers stable.\n"
         "DTL Title: {title}\n"
         "Legal text to analyze:\n{legal_text}"
