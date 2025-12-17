@@ -45,8 +45,8 @@ ONTOLOGY_PROMPT = PromptTemplate(
     template=(
         "You are an expert knowledge engineer creating an OWL ontology to explain all the key terms for this legal text.\n"
         "Return a JSON object with key `ontology_owl` (string).\n"
-        "The ontology_owl must be valid, consistent, error-free OWL with only semantic definitions of key terms of the law text.\n"
-        "Keep identifiers stable, add rdfs:label for readability.\n"
+        "The ontology_owl must be valid, consistent, error-free OWL with oonly semantic definitions of key terms of the law text.\n"
+        "Keep identifiers stable.\n"
         "DTL Title: {title}\n"
         "Legal text to analyze:\n{legal_text}"
     ),
@@ -112,8 +112,11 @@ SEGMENTATION_PROMPT = PromptTemplate(
     description="Segment a law into candidate DTLs",
     template=(
         "Segment the following law into high-level Digital Twin Law functions.\n"
-        "Return a JSON object with key `segments` listing objects that include:\n"
-        "- title: short name\n- description: summary of function that will be shown as a hint\n- legal_text: An exact excerpt from the provided legal text that corresponds to this function\n- legal_reference: pinpoint citation\n"
+        "Return a single valid JSON object with the key `segments`. Each item in `segments` MUST include:"
+        "- title: a short, precise functional name\n"
+        "- description: a concise explanation of the legal function\n"
+        "- legal_text: an exact verbatim excerpt from the provided legal text and MUST be a continuous substring of the provided text\n"
+        "- legal_reference: pinpoint citation\n"
         "Law: {law_name} ({law_identifier})\n"
         "Full text excerpt:\n{full_text}"
     ),
