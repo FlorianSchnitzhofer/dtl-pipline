@@ -84,7 +84,7 @@ export interface DTLAPI {
   dtlib_id: string;
   title: string;
   description?: string;
-  owner_user_id?: number | null;
+  owner_user_id?: string | null;
   version: string;
   legal_text: string;
   legal_reference: string;
@@ -304,12 +304,12 @@ export const dtlAPI = {
   // List DTLs
   list: async (
     dtlibId: string,
-    params?: { search?: string; status?: DTLReviewStatus; owner_user_id?: number },
+    params?: { search?: string; status?: DTLReviewStatus; owner_user_id?: string },
   ): Promise<DTLAPI[]> => {
     const queryParams = new URLSearchParams();
     if (params?.search) queryParams.set('search', params.search);
     if (params?.status) queryParams.set('status', params.status);
-    if (params?.owner_user_id) queryParams.set('owner_user_id', params.owner_user_id.toString());
+    if (params?.owner_user_id) queryParams.set('owner_user_id', params.owner_user_id);
 
     const query = queryParams.toString();
     return fetchAPI<DTLAPI[]>(`/dtlibs/${dtlibId}/dtls${query ? `?${query}` : ''}`);
@@ -323,7 +323,7 @@ export const dtlAPI = {
       legal_text: string;
       legal_reference: string;
       description?: string;
-      owner_user_id?: number | null;
+      owner_user_id?: string | null;
       classification?: string;
       tags?: string[];
       version: string;

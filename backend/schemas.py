@@ -60,7 +60,7 @@ class DTLIBRead(DTLIBBase):
 class DTLBase(BaseModel):
     title: str
     description: Optional[str] = None
-    owner_user_id: Optional[int] = None
+    owner_user_id: Optional[str] = None
     version: str
     legal_text: str
     legal_reference: str
@@ -77,7 +77,7 @@ class DTLCreate(DTLBase):
 class DTLUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    owner_user_id: Optional[int] = None
+    owner_user_id: Optional[str] = None
     legal_text: Optional[str] = None
     legal_reference: Optional[str] = None
     source_url: Optional[str] = None

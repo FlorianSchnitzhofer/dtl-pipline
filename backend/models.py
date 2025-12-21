@@ -46,7 +46,7 @@ class DTL(Base):
     dtlib_id = Column(Integer, ForeignKey("dtlibs.id"), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    owner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    owner_user_id = Column(String(191), nullable=True)
     version = Column(String(64), nullable=False)
     legal_text = Column(Text, nullable=False)
     legal_reference = Column(Text, nullable=False)
