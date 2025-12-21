@@ -42,7 +42,7 @@ class LLMService:
             completion_params = {
                 "model": self.deployment,
                 "messages": [{"role": "user", "content": prompt}],
-                "max_completion_tokens": 800,
+                "max_completion_tokens": 10000,
             }
             if self.temperature is not None:
                 completion_params["temperature"] = self.temperature
