@@ -33,6 +33,8 @@ class LLMService:
             logger.error("LLM prompt (debug): %s", prompt)
 
         if not self.client or not self.deployment:
+            reason = "missing AzureOpenAI client" if not self.client else "missing deployment name"
+            logger.warning("No LLM response available: %s.", reason)
             stubbed = f"[stubbed LLM response for prompt: {prompt[:120]}...]"
             if self.debug_mode:
                 logger.error("LLM response (debug): %s", stubbed)
@@ -48,6 +50,9 @@ class LLMService:
                 completion_params["temperature"] = self.temperature
             completion = self.client.chat.completions.create(**completion_params)
             response = completion.choices[0].message.content or ""
+
+            if not response:
+                logger.warning("No LLM response available: empty response content.")
 
             if self.debug_mode:
                 logger.error("LLM response (debug): %s", response)
