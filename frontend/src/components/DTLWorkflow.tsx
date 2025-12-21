@@ -97,7 +97,7 @@ function RawResponsePanel({ label, content }: { label: string; content?: string 
 
 export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
   const [currentStage, setCurrentStage] = useState<Stage>(0);
-  const ownerLabel = dtl.ownerUserId ? `User #${dtl.ownerUserId}` : 'Unassigned';
+  const ownerLabel = dtl.ownerUserId?.trim() ? dtl.ownerUserId : 'Unassigned';
   const [ontology, setOntology] = useState<OntologyData | null>(null);
   const [interfaceSpec, setInterfaceSpec] = useState<InterfaceData | null>(null);
   const [configuration, setConfiguration] = useState<ConfigurationData | null>(null);
@@ -511,18 +511,20 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
   const [formData, setFormData] = useState({
     name: dtl.name,
     description: dtl.description,
-    ownerUserId: dtl.ownerUserId ? String(dtl.ownerUserId) : '',
+    ownerUserId: dtl.ownerUserId || '',
     category: dtl.category,
-    tags: dtl.tags.join(', ')
+    tags: dtl.tags.join(', '),
+    legalText: dtl.legalText
   });
 
   const handleSave = () => {
     onUpdate(dtl.id, {
       name: formData.name,
       description: formData.description,
-      ownerUserId: formData.ownerUserId ? Number(formData.ownerUserId) : null,
+      ownerUserId: formData.ownerUserId.trim() ? formData.ownerUserId.trim() : null,
       category: formData.category,
-      tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean)
+      tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+      legalText: formData.legalText
     });
     setIsEditing(false);
   };
@@ -568,11 +570,21 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
               />
             </div>
 
+            <div>
+              <label className="block text-slate-700 mb-2">Legal Text <span className="text-red-500">*</span></label>
+              <textarea
+                value={formData.legalText}
+                onChange={(e) => setFormData({ ...formData, legalText: e.target.value })}
+                rows={6}
+                placeholder="Paste the statutory excerpt for this DTL..."
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-slate-700 mb-2">Owner / Responsible Person</label>
               <input
-                type="number"
                 value={formData.ownerUserId}
                 onChange={(e) => setFormData({ ...formData, ownerUserId: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -613,9 +625,10 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
                   setFormData({
                     name: dtl.name,
                     description: dtl.description,
-                    ownerUserId: dtl.ownerUserId ? String(dtl.ownerUserId) : '',
+                    ownerUserId: dtl.ownerUserId || '',
                     category: dtl.category,
-                    tags: dtl.tags.join(', ')
+                    tags: dtl.tags.join(', '),
+                    legalText: dtl.legalText
                   });
                 }}
                 className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
@@ -640,10 +653,14 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
               <span className="text-slate-500 text-sm">Semantic Description</span>
               <p className="text-slate-900 mt-1">{dtl.description}</p>
             </div>
+            <div>
+              <span className="text-slate-500 text-sm">Legal Text</span>
+              <p className="text-slate-900 mt-1 whitespace-pre-wrap">{dtl.legalText}</p>
+            </div>
             <div className="grid md:grid-cols-3 gap-6">
               <div>
                 <span className="text-slate-500 text-sm">Owner</span>
-                <p className="text-slate-900 mt-1">{dtl.ownerUserId ? `User #${dtl.ownerUserId}` : 'Unassigned'}</p>
+                <p className="text-slate-900 mt-1">{ownerLabel}</p>
               </div>
               <div>
                 <span className="text-slate-500 text-sm">Category</span>

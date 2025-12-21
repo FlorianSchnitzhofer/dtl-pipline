@@ -31,7 +31,7 @@ export type DTL = {
   dtlibId: string;
   name: string;
   description: string;
-  ownerUserId?: number | null;
+  ownerUserId?: string | null;
   version: string;
   legalText: string;
   legalReference: string;
