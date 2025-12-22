@@ -47,9 +47,9 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
 
   const getStatusIcon = (status: DTL['reviewStatus']) => {
     switch (status) {
-      case 'approved': return <CheckCircle2 className="size-4 text-emerald-600" />;
-      case 'pending': return <Clock className="size-4 text-amber-600" />;
-      case 'revision-requested': return <AlertCircle className="size-4 text-red-600" />;
+      case 'approved': return <CheckCircle2 className="size-4 text-slate-700" />;
+      case 'pending': return <Clock className="size-4 text-slate-600" />;
+      case 'revision-requested': return <AlertCircle className="size-4 text-slate-700" />;
     }
   };
 
@@ -63,9 +63,9 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
 
   const getStatusColor = (status: DTL['reviewStatus']) => {
     switch (status) {
-      case 'approved': return 'bg-emerald-50 text-emerald-700';
-      case 'pending': return 'bg-amber-50 text-amber-700';
-      case 'revision-requested': return 'bg-red-50 text-red-700';
+      case 'approved': return 'bg-slate-50 text-slate-800';
+      case 'pending': return 'bg-slate-50 text-slate-700';
+      case 'revision-requested': return 'bg-slate-50 text-slate-800';
     }
   };
 
@@ -86,13 +86,13 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <BookOpen className="size-6 text-blue-600" />
+                <BookOpen className="size-6 text-slate-700" />
                 <h1 className="text-slate-900">{dtlib.name}</h1>
                 <span className={`px-3 py-1 rounded-full text-sm ${
-                  dtlib.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                  dtlib.status === 'review' ? 'bg-amber-100 text-amber-700' :
-                  dtlib.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                  'bg-gray-100 text-gray-700'
+                  dtlib.status === 'approved' ? 'bg-slate-100 text-slate-800' :
+                  dtlib.status === 'review' ? 'bg-slate-100 text-slate-700' :
+                  dtlib.status === 'in-progress' ? 'bg-slate-100 text-slate-800' :
+                  'bg-slate-100 text-slate-700'
                 }`}>
                   {dtlib.status === 'in-progress' ? 'In Progress' : 
                    dtlib.status === 'review' ? 'In Review' :
@@ -119,7 +119,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
               onClick={() => setActiveTab('dtls')}
               className={`px-4 py-3 border-b-2 transition-colors ${
                 activeTab === 'dtls'
-                  ? 'border-blue-600 text-blue-600'
+                  ? 'border-slate-700 text-slate-700'
                   : 'border-transparent text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -132,7 +132,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
               onClick={() => setActiveTab('metadata')}
               className={`px-4 py-3 border-b-2 transition-colors ${
                 activeTab === 'metadata'
-                  ? 'border-blue-600 text-blue-600'
+                  ? 'border-slate-700 text-slate-700'
                   : 'border-transparent text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -142,7 +142,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
               onClick={() => setActiveTab('lawtext')}
               className={`px-4 py-3 border-b-2 transition-colors ${
                 activeTab === 'lawtext'
-                  ? 'border-blue-600 text-blue-600'
+                  ? 'border-slate-700 text-slate-700'
                   : 'border-transparent text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -161,7 +161,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
               {!isEditingMetadata && (
                 <button
                   onClick={() => setIsEditingMetadata(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                 >
                   <Edit2 className="size-4" />
                   Edit
@@ -177,7 +177,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                     type="text"
                     value={metadataForm.name}
                     onChange={(e) => setMetadataForm({ ...metadataForm, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                   />
                 </div>
 
@@ -188,7 +188,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                       type="text"
                       value={metadataForm.lawIdentifier}
                       onChange={(e) => setMetadataForm({ ...metadataForm, lawIdentifier: e.target.value })}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                     />
                   </div>
 
@@ -198,7 +198,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                       type="text"
                       value={metadataForm.jurisdiction}
                       onChange={(e) => setMetadataForm({ ...metadataForm, jurisdiction: e.target.value })}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                     />
                   </div>
 
@@ -208,7 +208,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                       type="text"
                       value={metadataForm.version}
                       onChange={(e) => setMetadataForm({ ...metadataForm, version: e.target.value })}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                     />
                   </div>
 
@@ -218,7 +218,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                       type="date"
                       value={metadataForm.effectiveDate}
                       onChange={(e) => setMetadataForm({ ...metadataForm, effectiveDate: e.target.value })}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                     />
                   </div>
                 </div>
@@ -229,7 +229,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                     value={metadataForm.description}
                     onChange={(e) => setMetadataForm({ ...metadataForm, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                   />
                 </div>
 
@@ -239,7 +239,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                     type="url"
                     value={metadataForm.authoritativeUrl}
                     onChange={(e) => setMetadataForm({ ...metadataForm, authoritativeUrl: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                   />
                 </div>
 
@@ -263,7 +263,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                   </button>
                   <button
                     onClick={handleSaveMetadata}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
                   >
                     Save Changes
                   </button>
@@ -299,7 +299,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                     href={dtlib.authoritativeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-700 mt-1 flex items-center gap-2"
+                    className="text-slate-700 hover:text-slate-800 mt-1 flex items-center gap-2"
                   >
                     {dtlib.authoritativeUrl}
                     <ExternalLink className="size-4" />
@@ -321,7 +321,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
               {!isEditingLawText && (
                 <button
                   onClick={() => setIsEditingLawText(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                 >
                   <Edit2 className="size-4" />
                   Edit
@@ -335,7 +335,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                   value={lawTextForm}
                   onChange={(e) => setLawTextForm(e.target.value)}
                   rows={20}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono text-sm"
                   placeholder="Paste the full statutory text here..."
                 />
                 <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
@@ -350,7 +350,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                   </button>
                   <button
                     onClick={handleSaveLawText}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
                   >
                     Save Changes
                   </button>
@@ -387,7 +387,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                 </button>
                 <button
                   onClick={() => setShowSegmentationModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
                 >
                   <Sparkles className="size-5" />
                   AI-Assisted Segmentation
@@ -407,7 +407,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <button
                     onClick={() => setShowSegmentationModal(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
                   >
                     <Sparkles className="size-5" />
                     Start Segmentation
@@ -426,7 +426,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                 {dtls.map((dtl) => (
                   <div
                     key={dtl.id}
-                    className="bg-white rounded-lg border border-slate-200 p-6 hover:border-blue-300 hover:shadow-md transition-all group"
+                    className="bg-white rounded-lg border border-slate-200 p-6 hover:border-slate-300 hover:shadow-md transition-all group"
                   >
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="flex-1">
@@ -449,7 +449,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => onSelectDTL(dtl.id)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
                         >
                           Open Workflow
                         </button>
@@ -459,7 +459,7 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                               onDeleteDTL(dtl.id);
                             }
                           }}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                         >
                           <Trash2 className="size-5" />
                         </button>
@@ -467,10 +467,10 @@ export function DTLibDetail({ dtlib, dtls, onBack, onUpdateDTLib, onCreateDTL, o
                     </div>
                     
                     {dtl.reviewStatus === 'revision-requested' && dtl.reviewComments && (
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-                        <AlertCircle className="size-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex gap-3">
+                        <AlertCircle className="size-5 text-slate-700 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm text-red-900">
+                          <p className="text-sm text-slate-900">
                             {dtl.reviewComments}
                           </p>
                         </div>
@@ -554,7 +554,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                 placeholder="DTL title"
               />
             </div>
@@ -563,7 +563,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
               <input
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                 placeholder="e.g., Process"
               />
             </div>
@@ -572,7 +572,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
               <input
                 value={form.legalReference}
                 onChange={(e) => setForm({ ...form, legalReference: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                 placeholder="Section / clause"
               />
             </div>
@@ -581,7 +581,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
               <input
                 value={form.version}
                 onChange={(e) => setForm({ ...form, version: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
             <div>
@@ -589,7 +589,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
               <input
                 value={form.authoritativeUrl}
                 onChange={(e) => setForm({ ...form, authoritativeUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                 placeholder="https://"
               />
             </div>
@@ -598,7 +598,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
               <input
                 value={form.tags}
                 onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                 placeholder="tag1, tag2"
               />
             </div>
@@ -610,7 +610,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               placeholder="Brief summary of the DTL"
             />
           </div>
@@ -621,7 +621,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
               value={form.legalText}
               onChange={(e) => setForm({ ...form, legalText: e.target.value })}
               rows={6}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono"
               placeholder="Relevant statutory text for this DTL"
             />
           </div>
@@ -636,7 +636,7 @@ function ManualDTLModal({ dtlib, onClose, onCreateDTL }: {
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
           >
             Create DTL
           </button>
@@ -706,18 +706,18 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
 
         <div className="p-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex gap-3">
-              <AlertCircle className="size-5 text-red-600 flex-shrink-0" />
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 flex gap-3">
+              <AlertCircle className="size-5 text-slate-700 flex-shrink-0" />
               <div className="flex-1 space-y-2">
-                <p className="text-sm text-red-900">{error}</p>
+                <p className="text-sm text-slate-900">{error}</p>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="font-semibold text-red-900">Details:</span>
-                  <code className="bg-white border border-red-200 rounded px-2 py-1 text-red-900 break-words">
+                  <span className="font-semibold text-slate-900">Details:</span>
+                  <code className="bg-white border border-slate-200 rounded px-2 py-1 text-slate-900 break-words">
                     {error}
                   </code>
                   <button
                     onClick={() => copyToClipboard(error)}
-                    className="px-2 py-1 bg-white border border-red-200 rounded text-red-900 hover:bg-red-50"
+                    className="px-2 py-1 bg-white border border-slate-200 rounded text-slate-900 hover:bg-slate-50"
                   >
                     Copy error
                   </button>
@@ -728,7 +728,7 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
           
           {suggestions.length === 0 ? (
             <div className="text-center py-12">
-              <Sparkles className="size-12 text-blue-600 mx-auto mb-4" />
+              <Sparkles className="size-12 text-slate-700 mx-auto mb-4" />
               <h3 className="text-slate-900 mb-2">Ready to analyze statute</h3>
               <p className="text-slate-600 mb-6">
                 The AI will analyze the statutory text and propose DTL candidates
@@ -736,7 +736,7 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
               <button
                 onClick={handleAnalyze}
                 disabled={isAnalyzing}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="px-6 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
                 {isAnalyzing ? 'Analyzing...' : 'Start Analysis'}
               </button>
@@ -758,7 +758,7 @@ function AISegmentationModal({ dtlib, onClose, onCreateDTL }: {
                         handleAccept(suggestion);
                         setSuggestions(prev => prev.filter((_, i) => i !== idx));
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors flex items-center gap-2"
                     >
                       <Plus className="size-4" />
                       Accept

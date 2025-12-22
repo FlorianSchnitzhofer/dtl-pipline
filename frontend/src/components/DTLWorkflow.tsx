@@ -68,7 +68,7 @@ function GenerationProgressBar({
 }) {
   return (
     <div className="flex items-center gap-3 text-sm text-slate-600">
-      <Clock className="size-4 text-indigo-500" />
+      <Clock className="size-4 text-slate-500" />
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
           <span className="font-medium text-slate-700">{label}</span>
@@ -76,7 +76,7 @@ function GenerationProgressBar({
         </div>
         <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 transition-[width] duration-200"
+            className="h-full bg-gradient-to-r from-slate-500 via-slate-500 to-slate-500 transition-[width] duration-200"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -113,13 +113,13 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
   const bulkProgress = useGenerationProgress(isGeneratingAll);
 
   const stages = [
-    { id: 0 as Stage, name: 'Metadata', icon: FileText, color: 'blue' },
-    { id: 1 as Stage, name: 'Ontology', icon: Network, color: 'purple' },
-    { id: 2 as Stage, name: 'Interface', icon: Code, color: 'cyan' },
-    { id: 3 as Stage, name: 'Configuration', icon: Settings, color: 'orange' },
-    { id: 4 as Stage, name: 'Tests', icon: TestTube, color: 'pink' },
-    { id: 5 as Stage, name: 'Logic', icon: Cpu, color: 'indigo' },
-    { id: 6 as Stage, name: 'Review', icon: CheckCircle, color: 'emerald' }
+    { id: 0 as Stage, name: 'Metadata', icon: FileText, color: 'slate' },
+    { id: 1 as Stage, name: 'Ontology', icon: Network, color: 'slate' },
+    { id: 2 as Stage, name: 'Interface', icon: Code, color: 'slate' },
+    { id: 3 as Stage, name: 'Configuration', icon: Settings, color: 'slate' },
+    { id: 4 as Stage, name: 'Tests', icon: TestTube, color: 'slate' },
+    { id: 5 as Stage, name: 'Logic', icon: Cpu, color: 'slate' },
+    { id: 6 as Stage, name: 'Review', icon: CheckCircle, color: 'slate' }
   ];
 
   useEffect(() => {
@@ -269,13 +269,7 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
 
   const getStageColor = (color: string, variant: 'bg' | 'text' | 'border' | 'hover') => {
     const colors = {
-      blue: { bg: 'bg-blue-500', text: 'text-blue-600', border: 'border-blue-500', hover: 'hover:bg-blue-600' },
-      purple: { bg: 'bg-purple-500', text: 'text-purple-600', border: 'border-purple-500', hover: 'hover:bg-purple-600' },
-      cyan: { bg: 'bg-cyan-500', text: 'text-cyan-600', border: 'border-cyan-500', hover: 'hover:bg-cyan-600' },
-      orange: { bg: 'bg-orange-500', text: 'text-orange-600', border: 'border-orange-500', hover: 'hover:bg-orange-600' },
-      pink: { bg: 'bg-pink-500', text: 'text-pink-600', border: 'border-pink-500', hover: 'hover:bg-pink-600' },
-      indigo: { bg: 'bg-indigo-500', text: 'text-indigo-600', border: 'border-indigo-500', hover: 'hover:bg-indigo-600' },
-      emerald: { bg: 'bg-emerald-500', text: 'text-emerald-600', border: 'border-emerald-500', hover: 'hover:bg-emerald-600' }
+      slate: { bg: 'bg-slate-600', text: 'text-slate-700', border: 'border-slate-500', hover: 'hover:bg-slate-700' },
     };
     return colors[color as keyof typeof colors]?.[variant] || '';
   };
@@ -293,7 +287,7 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
             Back to DTLIB
           </button>
           <div className="flex items-center gap-3 mb-3">
-            <BookOpen className="size-5 text-blue-600 flex-shrink-0" />
+            <BookOpen className="size-5 text-slate-700 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-sm text-slate-500 truncate">DTLIB</p>
               <p className="text-slate-900 truncate">{dtlib.name}</p>
@@ -335,7 +329,7 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
               href={dtl.authoritativeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 mt-3 flex items-center gap-2 text-sm"
+              className="text-slate-700 hover:text-slate-800 mt-3 flex items-center gap-2 text-sm"
             >
               View Source
               <ExternalLink className="size-3" />
@@ -355,7 +349,7 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
             </div>
             <div className="flex items-center gap-3">
               {artifactError && (
-                <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+                <div className="flex items-center gap-2 text-slate-700 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg">
                   <AlertCircle className="size-4" />
                   <span className="text-sm">{artifactError}</span>
                 </div>
@@ -363,7 +357,7 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
               <button
                 onClick={handleGenerateAll}
                 disabled={isGeneratingAll || isLoadingArtifacts}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
                 <Sparkles className="size-4" />
                 {isGeneratingAll ? 'Generating with AI...' : 'Generate All Artifacts'}
@@ -496,7 +490,7 @@ export function DTLWorkflow({ dtlib, dtl, onBack, onUpdateDTL }: Props) {
           <button
             onClick={() => currentStage < 6 && setCurrentStage((currentStage + 1) as Stage)}
             disabled={currentStage === 6}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {currentStage === 6 ? 'Complete' : 'Next'}
           </button>
@@ -539,7 +533,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
         {!isEditing && (
           <button
             onClick={() => setIsEditing(true)}
-            className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
           >
             Edit Metadata
           </button>
@@ -550,34 +544,34 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
         {isEditing ? (
           <div className="space-y-6">
             <div>
-              <label className="block text-slate-700 mb-2">DTL Title / Name <span className="text-red-500">*</span></label>
+              <label className="block text-slate-700 mb-2">DTL Title / Name <span className="text-slate-500">*</span></label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
 
             <div>
-              <label className="block text-slate-700 mb-2">Semantic Description <span className="text-red-500">*</span></label>
+              <label className="block text-slate-700 mb-2">Semantic Description <span className="text-slate-500">*</span></label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
                 placeholder="Explain what legal function this DTL performs..."
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
 
             <div>
-              <label className="block text-slate-700 mb-2">Legal Text <span className="text-red-500">*</span></label>
+              <label className="block text-slate-700 mb-2">Legal Text <span className="text-slate-500">*</span></label>
               <textarea
                 value={formData.legalText}
                 onChange={(e) => setFormData({ ...formData, legalText: e.target.value })}
                 rows={6}
                 placeholder="Paste the legal text excerpt used for this DTL..."
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
 
@@ -588,7 +582,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
                 type="number"
                 value={formData.ownerUserId}
                 onChange={(e) => setFormData({ ...formData, ownerUserId: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
 
@@ -597,7 +591,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                 >
                   <option value="Eligibility">Eligibility</option>
                   <option value="Calculation">Calculation</option>
@@ -615,7 +609,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 placeholder="eligibility, income-test, family"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
 
@@ -638,7 +632,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
               >
                 Save Changes
               </button>
@@ -676,7 +670,7 @@ function MetadataStage({ dtl, onUpdate }: { dtl: DTL; onUpdate: (id: string, upd
               <span className="text-slate-500 text-sm">Tags</span>
               <div className="flex flex-wrap gap-2 mt-2">
                 {dtl.tags.length > 0 ? dtl.tags.map((tag, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                  <span key={idx} className="px-3 py-1 bg-slate-50 text-slate-800 rounded-full text-sm">
                     {tag}
                   </span>
                 )) : (
@@ -741,7 +735,7 @@ function OntologyStage({
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
             >
               <Sparkles className="size-4" />
               {isGenerating ? 'Generating...' : 'Generate from Law'}
@@ -750,7 +744,7 @@ function OntologyStage({
           {!isEditing && (ontology?.ontology_owl || owlContent) && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
             >
               Edit OWL
             </button>
@@ -770,7 +764,7 @@ function OntologyStage({
         )}
         {!ontology?.ontology_owl && !owlContent ? (
           <div className="text-center py-12">
-            <Network className="size-12 text-purple-300 mx-auto mb-4" />
+            <Network className="size-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No ontology defined yet</h3>
             <p className="text-slate-600 mb-6">
               Generate an ontology from the legal text using AI assistance
@@ -782,7 +776,7 @@ function OntologyStage({
               value={owlContent}
               onChange={(e) => setOwlContent(e.target.value)}
               rows={20}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm bg-slate-50"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono text-sm bg-slate-50"
             />
             <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
               <button
@@ -796,7 +790,7 @@ function OntologyStage({
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
               >
                 Save OWL
               </button>
@@ -809,8 +803,8 @@ function OntologyStage({
                 {ontology?.ontology_owl || owlContent}
               </pre>
             </div>
-            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-              <p className="text-sm text-purple-900">
+            <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <p className="text-sm text-slate-900">
                 <strong>Traceability:</strong> This ontology is derived from {dtl.legalReference} and defines the semantic concepts used in the DTL interface and logic.
               </p>
             </div>
@@ -903,7 +897,7 @@ function InterfaceStage({
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
             >
               <Sparkles className="size-4" />
               {isGenerating ? 'Generating...' : 'Generate Specs'}
@@ -912,7 +906,7 @@ function InterfaceStage({
           {!isEditing && (interfaceSpec || apiSpec) && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
             >
               Edit Specs
             </button>
@@ -932,7 +926,7 @@ function InterfaceStage({
         )}
         {!interfaceSpec && !apiSpec ? (
           <div className="p-6 text-center py-12">
-            <Code className="size-12 text-cyan-300 mx-auto mb-4" />
+            <Code className="size-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No interfaces defined yet</h3>
             <p className="text-slate-600 mb-6">
               Generate API and MCP specifications based on the ontology
@@ -945,7 +939,7 @@ function InterfaceStage({
                 onClick={() => setActiveTab('api')}
                 className={`flex-1 px-6 py-3 text-sm transition-colors ${
                   activeTab === 'api'
-                    ? 'border-b-2 border-cyan-600 text-cyan-600 bg-cyan-50'
+                    ? 'border-b-2 border-slate-700 text-slate-700 bg-slate-50'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -955,7 +949,7 @@ function InterfaceStage({
                 onClick={() => setActiveTab('mcp')}
                 className={`flex-1 px-6 py-3 text-sm transition-colors ${
                   activeTab === 'mcp'
-                    ? 'border-b-2 border-cyan-600 text-cyan-600 bg-cyan-50'
+                    ? 'border-b-2 border-slate-700 text-slate-700 bg-slate-50'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -970,7 +964,7 @@ function InterfaceStage({
                     value={activeTab === 'api' ? apiSpec : mcpSpec}
                     onChange={(e) => activeTab === 'api' ? setApiSpec(e.target.value) : setMcpSpec(e.target.value)}
                     rows={20}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono text-sm bg-slate-50"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono text-sm bg-slate-50"
                   />
                   {activeTab === 'api' && (
                     <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
@@ -986,7 +980,7 @@ function InterfaceStage({
                       </button>
                       <button
                         onClick={handleSave}
-                        className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+                        className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
                       >
                         Save Specifications
                       </button>
@@ -1059,7 +1053,7 @@ function ConfigurationStage({
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
             >
               <Sparkles className="size-4" />
               {isGenerating ? 'Extracting...' : 'Extract from Law'}
@@ -1068,7 +1062,7 @@ function ConfigurationStage({
           {!isEditing && (configuration?.configuration_owl || configOwl) && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
             >
               Edit Config
             </button>
@@ -1088,7 +1082,7 @@ function ConfigurationStage({
         )}
         {!configuration?.configuration_owl && !configOwl ? (
           <div className="text-center py-12">
-            <Settings className="size-12 text-orange-300 mx-auto mb-4" />
+            <Settings className="size-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No configuration defined yet</h3>
             <p className="text-slate-600 mb-6">
               Extract configuration parameters from the statutory text
@@ -1100,7 +1094,7 @@ function ConfigurationStage({
               value={configOwl}
               onChange={(e) => setConfigOwl(e.target.value)}
               rows={20}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono text-sm bg-slate-50"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono text-sm bg-slate-50"
             />
             <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
               <button
@@ -1114,7 +1108,7 @@ function ConfigurationStage({
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
               >
                 Save Configuration
               </button>
@@ -1127,8 +1121,8 @@ function ConfigurationStage({
                 {configuration?.configuration_owl || configOwl}
               </pre>
             </div>
-            <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-              <p className="text-sm text-orange-900">
+            <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <p className="text-sm text-slate-900">
                 <strong>Note:</strong> Configuration parameters are maintained separately from logic to support future legal amendments without code changes.
               </p>
             </div>
@@ -1173,7 +1167,7 @@ function TestsStage({
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
           >
             <Sparkles className="size-4" />
             {isGenerating ? 'Generating...' : 'Generate Tests'}
@@ -1193,7 +1187,7 @@ function TestsStage({
         )}
         {tests.length === 0 ? (
           <div className="text-center py-12">
-            <TestTube className="size-12 text-pink-300 mx-auto mb-4" />
+            <TestTube className="size-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No tests defined yet</h3>
             <p className="text-slate-600 mb-6">
               Generate test scenarios based on the interface and configuration
@@ -1204,7 +1198,7 @@ function TestsStage({
             {tests.map((test) => (
               <div
                 key={test.id}
-                className="border border-slate-200 rounded-lg p-4 hover:border-pink-300 transition-colors"
+                className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -1212,10 +1206,10 @@ function TestsStage({
                       <h4 className="text-slate-900">{test.name}</h4>
                       <span className={`px-3 py-1 rounded-full text-sm ${
                         test.last_result === 'passed'
-                          ? 'bg-emerald-100 text-emerald-700'
+                          ? 'bg-slate-100 text-slate-800'
                           : test.last_result === 'failed'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-amber-100 text-amber-700'
+                          ? 'bg-slate-100 text-slate-800'
+                          : 'bg-slate-100 text-slate-700'
                       }`}>
                         {test.last_result === 'passed'
                           ? 'Passed'
@@ -1280,7 +1274,7 @@ function LogicStage({
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
             >
               <Sparkles className="size-4" />
               {isGenerating ? 'Drafting...' : 'Draft Logic'}
@@ -1289,7 +1283,7 @@ function LogicStage({
           {!isEditing && (logicContent || logic) && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
             >
               Edit Logic
             </button>
@@ -1309,7 +1303,7 @@ function LogicStage({
         )}
         {!logicContent && !logic ? (
           <div className="text-center py-12">
-            <Cpu className="size-12 text-indigo-300 mx-auto mb-4" />
+            <Cpu className="size-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-slate-900 mb-2">No logic implemented yet</h3>
             <p className="text-slate-600 mb-6">
               Draft executable logic based on the statutory text, configuration, and tests
@@ -1321,7 +1315,7 @@ function LogicStage({
               value={logicContent}
               onChange={(e) => setLogicContent(e.target.value)}
               rows={20}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm bg-slate-50"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono text-sm bg-slate-50"
             />
             <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
               <button
@@ -1338,7 +1332,7 @@ function LogicStage({
                   await onSave(logicContent, logic?.language);
                   setIsEditing(false);
                 }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
               >
                 Save Logic
               </button>
@@ -1351,8 +1345,8 @@ function LogicStage({
                 {logicContent}
               </pre>
             </div>
-            <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-              <p className="text-sm text-indigo-900">
+            <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <p className="text-sm text-slate-900">
                 <strong>Traceability:</strong> Logic steps are linked to {dtl.legalReference}, configuration parameters, and ontology elements.
               </p>
             </div>
@@ -1413,7 +1407,7 @@ function ReviewStage({
         </div>
         <button
           onClick={() => setShowApprovalModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
         >
           <CheckCircle className="size-4" />
           Review & Approve
@@ -1425,11 +1419,11 @@ function ReviewStage({
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-slate-900">Workflow Completion</h3>
-            <span className="text-2xl text-emerald-600">{completionPercentage}%</span>
+            <span className="text-2xl text-slate-700">{completionPercentage}%</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-3 mb-4">
             <div
-              className="bg-emerald-600 h-3 rounded-full transition-all"
+              className="bg-slate-700 h-3 rounded-full transition-all"
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
@@ -1437,9 +1431,9 @@ function ReviewStage({
             {Object.entries(completionStatus).map(([key, completed]) => (
               <div key={key} className="flex items-center gap-2">
                 {completed ? (
-                  <CheckCircle className="size-5 text-emerald-600" />
+                  <CheckCircle className="size-5 text-slate-700" />
                 ) : (
-                  <AlertCircle className="size-5 text-amber-600" />
+                  <AlertCircle className="size-5 text-slate-600" />
                 )}
                 <span className="text-slate-700 capitalize">{key}</span>
               </div>
@@ -1470,31 +1464,31 @@ function ReviewStage({
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Ontology (OWL)</span>
-                <span className={artifacts.ontology ? 'text-emerald-600' : 'text-amber-600'}>
+                <span className={artifacts.ontology ? 'text-slate-700' : 'text-slate-600'}>
                   {artifacts.ontology ? 'Defined' : 'Missing'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">API Specification</span>
-                <span className={artifacts.interface ? 'text-emerald-600' : 'text-amber-600'}>
+                <span className={artifacts.interface ? 'text-slate-700' : 'text-slate-600'}>
                   {artifacts.interface ? 'Defined' : 'Missing'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Configuration</span>
-                <span className={artifacts.configuration ? 'text-emerald-600' : 'text-amber-600'}>
+                <span className={artifacts.configuration ? 'text-slate-700' : 'text-slate-600'}>
                   {artifacts.configuration ? 'Defined' : 'Missing'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Unit Tests</span>
-                <span className={tests.length > 0 ? 'text-emerald-600' : 'text-amber-600'}>
+                <span className={tests.length > 0 ? 'text-slate-700' : 'text-slate-600'}>
                   {tests.length} tests
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-600">Logic</span>
-                <span className={artifacts.logic ? 'text-emerald-600' : 'text-amber-600'}>
+                <span className={artifacts.logic ? 'text-slate-700' : 'text-slate-600'}>
                   {artifacts.logic ? 'Implemented' : 'Missing'}
                 </span>
               </div>
@@ -1512,10 +1506,10 @@ function ReviewStage({
                   <span className="text-slate-700">{test.name}</span>
                   <span className={`px-3 py-1 rounded-full ${
                     test.last_result === 'passed'
-                      ? 'bg-emerald-100 text-emerald-700'
+                      ? 'bg-slate-100 text-slate-800'
                       : test.last_result === 'failed'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-amber-100 text-amber-700'
+                      ? 'bg-slate-100 text-slate-800'
+                      : 'bg-slate-100 text-slate-700'
                   }`}>
                     {test.last_result || 'Pending'}
                   </span>
@@ -1528,25 +1522,25 @@ function ReviewStage({
         {/* Current Review Status */}
         <div className={`rounded-lg border p-6 ${
           dtl.reviewStatus === 'approved'
-            ? 'bg-emerald-50 border-emerald-200'
+            ? 'bg-slate-50 border-slate-200'
             : dtl.reviewStatus === 'revision-requested'
-            ? 'bg-red-50 border-red-200'
-            : 'bg-amber-50 border-amber-200'
+            ? 'bg-slate-50 border-slate-200'
+            : 'bg-slate-50 border-slate-200'
         }`}>
           <div className="flex items-center gap-3 mb-2">
             {dtl.reviewStatus === 'approved' ? (
-              <CheckCircle className="size-5 text-emerald-600" />
+              <CheckCircle className="size-5 text-slate-700" />
             ) : dtl.reviewStatus === 'revision-requested' ? (
-              <AlertCircle className="size-5 text-red-600" />
+              <AlertCircle className="size-5 text-slate-700" />
             ) : (
-              <Clock className="size-5 text-amber-600" />
+              <Clock className="size-5 text-slate-600" />
             )}
             <h4 className={
               dtl.reviewStatus === 'approved'
-                ? 'text-emerald-900'
+                ? 'text-slate-900'
                 : dtl.reviewStatus === 'revision-requested'
-                ? 'text-red-900'
-                : 'text-amber-900'
+                ? 'text-slate-900'
+                : 'text-slate-900'
             }>
               {dtl.reviewStatus === 'approved'
                 ? 'DTL Approved'
@@ -1558,10 +1552,10 @@ function ReviewStage({
           {dtl.reviewComments && (
             <p className={`text-sm ${
               dtl.reviewStatus === 'approved'
-                ? 'text-emerald-800'
+                ? 'text-slate-800'
                 : dtl.reviewStatus === 'revision-requested'
-                ? 'text-red-800'
-                : 'text-amber-800'
+                ? 'text-slate-800'
+                : 'text-slate-800'
             }`}>
               {dtl.reviewComments}
             </p>
@@ -1588,7 +1582,7 @@ function ReviewStage({
                   onChange={(e) => setReviewComments(e.target.value)}
                   rows={4}
                   placeholder="Add any comments or feedback..."
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                 />
               </div>
             </div>
@@ -1601,13 +1595,13 @@ function ReviewStage({
               </button>
               <button
                 onClick={handleRequestRevision}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
               >
                 Request Revision
               </button>
               <button
                 onClick={handleApprove}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
               >
                 Approve DTL
               </button>
