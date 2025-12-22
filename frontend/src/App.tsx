@@ -276,7 +276,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="size-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="size-12 text-slate-700 animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Loading Digital Twin Libraries...</p>
         </div>
       </div>
@@ -286,7 +286,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50">
       {view.type === 'list' && error && (
-        <div className="bg-amber-50 border-b border-amber-200 text-amber-900">
+        <div className="bg-slate-50 border-b border-slate-200 text-slate-900">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-start gap-3">
             <AlertCircle className="size-5 flex-shrink-0" />
             <div className="flex-1 space-y-2">
@@ -296,12 +296,12 @@ export default function App() {
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="font-semibold">Details:</span>
-                <code className="bg-white/60 border border-amber-200 rounded px-2 py-1 text-amber-950 break-words">
+                <code className="bg-white/60 border border-slate-200 rounded px-2 py-1 text-slate-950 break-words">
                   {error}
                 </code>
                 <button
                   onClick={() => copyToClipboard(error)}
-                  className="px-2 py-1 bg-white/70 border border-amber-200 rounded text-amber-900 hover:bg-white"
+                  className="px-2 py-1 bg-white/70 border border-slate-200 rounded text-slate-900 hover:bg-white"
                 >
                   Copy error
                 </button>
@@ -309,7 +309,7 @@ export default function App() {
             </div>
             <button
               onClick={loadDTLibs}
-              className="ml-auto px-4 py-2 bg-amber-100 text-amber-900 rounded-lg hover:bg-amber-200 transition-colors"
+              className="ml-auto px-4 py-2 bg-slate-100 text-slate-900 rounded-lg hover:bg-slate-200 transition-colors"
             >
               Retry
             </button>
@@ -327,19 +327,19 @@ export default function App() {
       )}
 
       {view.type === 'dtlib-detail' && dtlLoadError && (
-        <div className="bg-amber-50 border-b border-amber-200 text-amber-900">
+        <div className="bg-slate-50 border-b border-slate-200 text-slate-900">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-start gap-3">
             <AlertCircle className="size-5 flex-shrink-0" />
             <div className="flex-1 space-y-2">
               <p>DTLs could not be loaded for this library.</p>
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="font-semibold">Details:</span>
-                <code className="bg-white/60 border border-amber-200 rounded px-2 py-1 text-amber-950 break-words">
+                <code className="bg-white/60 border border-slate-200 rounded px-2 py-1 text-slate-950 break-words">
                   {dtlLoadError}
                 </code>
                 <button
                   onClick={() => copyToClipboard(dtlLoadError)}
-                  className="px-2 py-1 bg-white/70 border border-amber-200 rounded text-amber-900 hover:bg-white"
+                  className="px-2 py-1 bg-white/70 border border-slate-200 rounded text-slate-900 hover:bg-white"
                 >
                   Copy error
                 </button>

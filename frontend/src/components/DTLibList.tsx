@@ -27,10 +27,10 @@ export function DTLibList({ dtlibs, onSelectDTLib, onCreateDTLib }: Props) {
 
   const getStatusColor = (status: DTLib['status']) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-700';
-      case 'in-progress': return 'bg-blue-100 text-blue-700';
-      case 'review': return 'bg-amber-100 text-amber-700';
-      case 'approved': return 'bg-emerald-100 text-emerald-700';
+      case 'draft': return 'bg-slate-100 text-slate-700';
+      case 'in-progress': return 'bg-slate-100 text-slate-800';
+      case 'review': return 'bg-slate-100 text-slate-700';
+      case 'approved': return 'bg-slate-100 text-slate-800';
     }
   };
 
@@ -55,7 +55,7 @@ export function DTLibList({ dtlibs, onSelectDTLib, onCreateDTLib }: Props) {
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
             >
               <Plus className="size-5" />
               New DTLIB
@@ -76,7 +76,7 @@ export function DTLibList({ dtlibs, onSelectDTLib, onCreateDTLib }: Props) {
                 placeholder="Search by name, identifier, or jurisdiction..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export function DTLibList({ dtlibs, onSelectDTLib, onCreateDTLib }: Props) {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
               >
                 <option value="all">All Statuses</option>
                 <option value="draft">Draft</option>
@@ -109,7 +109,7 @@ export function DTLibList({ dtlibs, onSelectDTLib, onCreateDTLib }: Props) {
             {!searchQuery && filterStatus === 'all' && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
               >
                 <Plus className="size-5" />
                 Create DTLIB
@@ -122,12 +122,12 @@ export function DTLibList({ dtlibs, onSelectDTLib, onCreateDTLib }: Props) {
               <button
                 key={lib.id}
                 onClick={() => onSelectDTLib(lib.id)}
-                className="bg-white rounded-lg border border-slate-200 p-6 hover:border-blue-300 hover:shadow-md transition-all text-left group"
+                className="bg-white rounded-lg border border-slate-200 p-6 hover:border-slate-300 hover:shadow-md transition-all text-left group"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
-                      <BookOpen className="size-5 text-blue-600 flex-shrink-0" />
+                      <BookOpen className="size-5 text-slate-700 flex-shrink-0" />
                       <h3 className="text-slate-900 truncate">{lib.name}</h3>
                       <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(lib.status)}`}>
                         {getStatusLabel(lib.status)}
@@ -153,7 +153,7 @@ export function DTLibList({ dtlibs, onSelectDTLib, onCreateDTLib }: Props) {
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="size-5 text-slate-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
+                  <ChevronRight className="size-5 text-slate-400 group-hover:text-slate-700 transition-colors flex-shrink-0" />
                 </div>
               </button>
             ))}
@@ -207,7 +207,7 @@ function CreateDTLibModal({ onClose, onCreate }: {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
             <label className="block text-slate-700 mb-2">
-              Statute Name <span className="text-red-500">*</span>
+              Statute Name <span className="text-slate-500">*</span>
             </label>
             <input
               type="text"
@@ -215,14 +215,14 @@ function CreateDTLibModal({ onClose, onCreate }: {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Family Benefits Act 2024"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
             />
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-slate-700 mb-2">
-                Law Identifier <span className="text-red-500">*</span>
+                Law Identifier <span className="text-slate-500">*</span>
               </label>
               <input
                 type="text"
@@ -230,13 +230,13 @@ function CreateDTLibModal({ onClose, onCreate }: {
                 value={formData.lawIdentifier}
                 onChange={(e) => setFormData({ ...formData, lawIdentifier: e.target.value })}
                 placeholder="e.g., FBA-2024-01"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
 
             <div>
               <label className="block text-slate-700 mb-2">
-                Jurisdiction <span className="text-red-500">*</span>
+                Jurisdiction <span className="text-slate-500">*</span>
               </label>
               <input
                 type="text"
@@ -244,33 +244,33 @@ function CreateDTLibModal({ onClose, onCreate }: {
                 value={formData.jurisdiction}
                 onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
                 placeholder="e.g., Federal"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
 
             <div>
               <label className="block text-slate-700 mb-2">
-                Version <span className="text-red-500">*</span>
+                Version <span className="text-slate-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={formData.version}
                 onChange={(e) => setFormData({ ...formData, version: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
 
             <div>
               <label className="block text-slate-700 mb-2">
-                Effective Date <span className="text-red-500">*</span>
+                Effective Date <span className="text-slate-500">*</span>
               </label>
               <input
                 type="date"
                 required
                 value={formData.effectiveDate}
                 onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
           </div>
@@ -282,7 +282,7 @@ function CreateDTLibModal({ onClose, onCreate }: {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Brief description of this statute..."
               rows={3}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
             />
           </div>
 
@@ -293,13 +293,13 @@ function CreateDTLibModal({ onClose, onCreate }: {
               value={formData.authoritativeUrl}
               onChange={(e) => setFormData({ ...formData, authoritativeUrl: e.target.value })}
               placeholder="https://legislation.gov/..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
             />
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="size-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-900">
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="size-5 text-slate-700 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-slate-900">
               You can add the full statutory text after creating the DTLIB in the detail view.
             </p>
           </div>
@@ -314,7 +314,7 @@ function CreateDTLibModal({ onClose, onCreate }: {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
             >
               Create DTLIB
             </button>
